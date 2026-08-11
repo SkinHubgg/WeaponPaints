@@ -37,6 +37,50 @@ Unfinished, unoptimized and not fully functional ugly demo weapon paints plugin 
 - In `addons/counterstrikesharp/configs/`**`core.json`** set **FollowCS2ServerGuidelines** to **`false`**
 - Copy from plugins folder gamedata file **`weaponpaints.json`** to folder **`addons/counterstrikesharp/gamedata/`**
 
+## Item data
+
+Skins, gloves, agents, music kits and collectibles are **not shipped with the plugin**. They are fetched
+once, when the plugin loads, from the address in `DataUrl` (default `https://cdn.skinhub.gg`), requested as
+`<DataUrl>/data/<dataset>.json`.
+
+- The fetch runs on a worker thread. The server never waits for it, and neither does a player connect.
+  Anyone who joins in the second or two before it lands sees default items and is noted in the log.
+- Requests are **conditional**. The `ETag` and `Last-Modified` of the cached copy are stored beside it and sent
+  back as `If-None-Match` / `If-Modified-Since`, so a dataset that has not changed answers **304 with no body**:
+  one request, nothing transferred, cache kept. Nothing is re-downloaded until it actually changes.
+- The last response that parsed is cached in **`<plugin folder>/.cache/`**. Override it with `CacheDirectory`;
+  a relative value there is resolved against the plugin folder, never the process working directory, so
+  `"../.cache"` puts the cache *beside* the plugin folder instead of inside it — which is what to use when the
+  plugin folder is an ephemeral or read-only mount, as it often is on containerised servers. If the directory
+  cannot be created or written the plugin still runs from `DataUrl` and simply has no offline fallback, saying
+  so **once** in the log.
+- If `DataUrl` is unreachable or broken, the plugin serves that cache **and warns, every time, with its age** —
+  so an outage cannot leave a server with no items, and you can see how old what you are serving is.
+- A dataset that was served from cache is retried on a worker thread after 15s, 30s, 60s, 120s and 300s and
+  then given up on, so a CDN that recovers within about nine minutes is picked up without restarting the
+  server. After that, `css_plugins reload WeaponPaints` (or a server restart) retries.
+- **If there is nothing to serve at all** — `DataUrl` unusable *and* no usable cache, which is the
+  first-ever-start-with-no-network case — the plugin **refuses to run**. It logs why and asks
+  CounterStrikeSharp to terminate it, rather than sitting there giving everyone default items. **The server is
+  not affected**; only the plugin stops. Nothing is shipped in the plugin archive to fall back on, which is the
+  trade for an archive that does not carry ~84 MB of JSON.
+- `CacheDiskHours` (default `12`) is how long the copy on disk is used as-is, with **no request at all**. Past
+  that window the conditional revalidation above runs as normal — the window only skips the check, it does not
+  replace it. Set it to `0` to always revalidate.
+- Because that window is on by default, **new items can be up to `CacheDiskHours` hours late after a CS2
+  update**.
+  One summary line per start says which path every dataset took, so that is diagnosable at a glance:
+
+  ```
+  Item data ready in 88 ms - unchanged, kept cache (304): skins, gloves | read from disk unchecked
+  (CacheDiskHours): agents, music, collectibles
+  ```
+
+  The labels are `downloaded`, `unchanged, kept cache (304)`, `read from disk unchecked (CacheDiskHours)`,
+  `STALE cache, DataUrl unreachable` and `MISSING`.
+- `DataUrl` publishes English item names only. `SkinsLanguage` no longer does anything and the plugin warns
+  at load if it is set to something other than `en`.
+
 ## Plugin Configuration
 <details>
   <summary>Click to expand</summary>
@@ -80,17 +124,8 @@ Unfinished, unoptimized and not fully functional ugly demo weapon paints plugin 
 </details>
     
 ## Web install
-- Requires PHP >= 7.4 with curl and pdo_mysql ***(Tested on php ver **`8.2.3`** and nginx webserver)***
-- **Before using website, make sure the plugin is correctly loaded in cs2 server!** Mysql tables are created by plugin not by website.
-- Copy website to web server ***(Folder `img` not needed)***
-- Get [Steam API Key](https://steamcommunity.com/dev/apikey)
-- Fill in database credentials and api key in `class/config.php`
-- Visit website and login via steam
-
-## Web Features
-- Basic website
-- Steam login/logout
-- Change knife, paint, seed and wear
+The bundled PHP website was removed from this fork — this repository is the plugin only. `Website` in the
+config and the `!ws` command still just print whatever URL you point them at.
 
 ## Troubleshooting
 <details>
@@ -103,6 +138,3 @@ Plugin is not loaded or configured with mysql credentials. Tables are auto-creat
 </details>
 
 ### Use this plugin at your own risk! Using this may lead to GSLT ban or something else Valve come with. [Valve Server guidelines](https://blog.counter-strike.net/index.php/server_guidelines/)
-
-## Preview
-![preview](https://github.com/Nereziel/cs2-WeaponPaints/blob/main/website/preview.png?raw=true)

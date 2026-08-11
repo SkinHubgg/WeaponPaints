@@ -66,12 +66,7 @@ public partial class WeaponPaints : BasePlugin, IPluginConfig<WeaponPaintsConfig
 			}
 		}
 
-		Utility.LoadSkinsFromFile(ModuleDirectory + $"/data/skins_{_config.SkinsLanguage}.json", Logger);
-		Utility.LoadGlovesFromFile(ModuleDirectory + $"/data/gloves_{_config.SkinsLanguage}.json", Logger);
-		Utility.LoadAgentsFromFile(ModuleDirectory + $"/data/agents_{_config.SkinsLanguage}.json", Logger);
-		Utility.LoadMusicFromFile(ModuleDirectory + $"/data/music_{_config.SkinsLanguage}.json", Logger);
-		Utility.LoadPinsFromFile(ModuleDirectory + $"/data/collectibles_{_config.SkinsLanguage}.json", Logger);
-
+		// Item data is not read here any more - OnConfigParsed already started fetching it, see ItemData.
 		RegisterListeners();
 	}
 
@@ -82,15 +77,15 @@ public partial class WeaponPaints : BasePlugin, IPluginConfig<WeaponPaintsConfig
 
 		if (config.DatabaseHost.Length < 1 || config.DatabaseName.Length < 1 || config.DatabaseUser.Length < 1)
 		{
-			Logger.LogError("You need to setup Database credentials in \"configs/plugins/WeaponPaints/WeaponPaints.json\"!");
-			Unload(false);
+			// Was Unload(false), which is a no-op - BasePlugin.Unload has an empty body and this plugin does
+			// not override it, so the plugin used to carry on loading with no database at all. See Disable().
+			Disable("Database credentials are not set in \"configs/plugins/WeaponPaints/WeaponPaints.json\"");
 			return;
 		}
 
 		if (!File.Exists(Path.GetDirectoryName(Path.GetDirectoryName(ModuleDirectory)) + "/gamedata/weaponpaints.json"))
 		{
-			Logger.LogError("You need to upload \"weaponpaints.json\" to \"gamedata directory\"!");
-			Unload(false);
+			Disable("\"weaponpaints.json\" is missing from the \"gamedata\" directory");
 			return;
 		}
 		
@@ -113,6 +108,47 @@ public partial class WeaponPaints : BasePlugin, IPluginConfig<WeaponPaintsConfig
 		Utility.Config = config;
 		Utility.ShowAd(ModuleVersion);
 		Task.Run(async () => await Utility.CheckVersion(ModuleVersion, Logger));
+
+		// Earliest point at which DataUrl is known. Deliberately not awaited: the fetch runs on a worker
+		// thread while the server finishes starting, and nothing on the game thread waits for it. Players
+		// who connect before it lands get default items and a warning in the log. If it finds nothing to
+		// serve at all it calls Disable() rather than letting the plugin pretend to work.
+		_ = ItemData.LoadAsync(ModuleDirectory, ModuleVersion, config, Logger, Disable);
+	}
+
+	/// <summary>
+	/// Stops this plugin without touching the server. CounterStrikeSharp's supported path for this is
+	/// BasePlugin.TerminateSelf, which forwards to PluginContext via ISelfPluginControl.
+	///
+	/// Two things about it are worth writing down, both verified against CounterStrikeSharp.API 1.0.367:
+	///   * it is safe to call from a worker thread - PluginContext.TerminateSelf checks
+	///     Thread.CurrentThread.IsThreadPoolThread and marshals itself onto the main thread with
+	///     Server.NextFrame when needed, so ItemData can call this straight from its fetch task;
+	///   * after queueing (or performing) the termination it unconditionally throws NotImplementedException
+	///     at the caller. The termination still happens; the exception is leftover scaffolding in that
+	///     version. Hence the catch below - without it this would look like a crash instead of a clean stop.
+	///
+	/// BasePlugin.Unload(bool) is NOT an alternative: its body is empty, so calling it on yourself does
+	/// nothing at all.
+	/// </summary>
+	private void Disable(string reason)
+	{
+		Logger.LogError("Disabling WeaponPaints: {Reason}. The server is unaffected.", reason);
+
+		try
+		{
+			TerminateSelf($"WeaponPaints: {reason}");
+		}
+		catch (NotImplementedException)
+		{
+			// Expected, see above. The plugin is being terminated regardless.
+		}
+		catch (Exception ex)
+		{
+			Logger.LogError(ex,
+				"CounterStrikeSharp refused to terminate the plugin. It will stay loaded but will not work - " +
+				"unload it manually with \"css_plugins unload WeaponPaints\"");
+		}
 	}
 
 	public override void OnAllPluginsLoaded(bool hotReload)

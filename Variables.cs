@@ -12,7 +12,9 @@ namespace WeaponPaints;
 
 public partial class WeaponPaints
 {
-	private static readonly Dictionary<string, string> WeaponList = new()
+	// internal rather than private: ItemData reads both maps to translate the published skin catalogue
+	// into the shape the menus expect (classname per defindex, display name per classname).
+	internal static readonly Dictionary<string, string> WeaponList = new()
 	{
 		{"weapon_deagle", "Desert Eagle"},
 		{"weapon_elite", "Dual Berettas"},
@@ -99,7 +101,7 @@ public partial class WeaponPaints
 
 	//private static readonly Func<nint, string, int, int> SetBodygroup = SetBodygroupFunc.Invoke;
 
-	private static Dictionary<int, string> WeaponDefindex { get; } = new()
+	internal static Dictionary<int, string> WeaponDefindex { get; } = new()
 	{
 		{ 1, "weapon_deagle" },
 		{ 2, "weapon_elite" },

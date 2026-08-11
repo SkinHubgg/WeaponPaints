@@ -20,6 +20,9 @@ namespace WeaponPaints
 			if (player is null || !player.IsValid || player.IsBot ||
 				WeaponSync == null || Database == null) return HookResult.Continue;
 
+			// Never waits on the item data - it only notes in the log that this player was early.
+			ItemData.WarnIfNotReady(Logger);
+
 			var playerInfo = new PlayerInfo
 			{
 				UserId = player.UserId,

@@ -369,10 +369,9 @@ public partial class WeaponPaints
 			var selectedWeapon = option.Text;
 
 			if (!classNamesByWeapon.TryGetValue(selectedWeapon, out var selectedWeaponClassname)) return;
-			var skinsForSelectedWeapon = SkinsList.Where(skin =>
-				skin.TryGetValue("weapon_name", out var weaponName) &&
-				weaponName?.ToString() == selectedWeaponClassname
-			)?.ToList();
+			var skinsForSelectedWeapon = SkinsList
+				.Where(skin => ItemData.SkinWeaponName(skin) == selectedWeaponClassname)
+				.ToList();
 
 			var skinSubMenu = Utility.CreateMenu(Localizer["wp_skin_menu_skin_title", selectedWeapon]);
 
@@ -382,27 +381,20 @@ public partial class WeaponPaints
 				if (!Utility.IsPlayerValid(p)) return;
 
 				var firstSkin = SkinsList.FirstOrDefault(skin =>
-				{
-					if (skin.TryGetValue("weapon_name", out var weaponName))
-					{
-						return weaponName?.ToString() == selectedWeaponClassname;
-					}
-					return false;
-				});
+					ItemData.SkinWeaponName(skin) == selectedWeaponClassname);
 
 				var selectedSkin = opt.Text;
 				var selectedPaintId = selectedSkin[(selectedSkin.LastIndexOf('(') + 1)..].Trim(')');
 
 				if (firstSkin == null ||
-				    !firstSkin.TryGetValue("weapon_defindex", out var weaponDefIndexObj) ||
-				    !int.TryParse(weaponDefIndexObj.ToString(), out var weaponDefIndex) ||
+				    ItemData.SkinDefindex(firstSkin) is not { } weaponDefIndex ||
 				    !int.TryParse(selectedPaintId, out var paintId)) return;
 				{
 					if (Config.Additional.ShowSkinImage)
 					{
 						var foundSkin = SkinsList.FirstOrDefault(skin =>
-							((int?)skin["weapon_defindex"] ?? 0) == weaponDefIndex &&
-							((int?)skin["paint"] ?? 0) == paintId &&
+							ItemData.SkinDefindex(skin) == weaponDefIndex &&
+							ItemData.SkinPaint(skin) == paintId &&
 							skin["image"] != null
 						);
 						var image = foundSkin?["image"]?.ToString() ?? "";
@@ -457,20 +449,12 @@ public partial class WeaponPaints
 			};
 
 			// Add skin options to the submenu for the selected weapon
-			if (skinsForSelectedWeapon != null)
+			foreach (var skin in skinsForSelectedWeapon)
 			{
-				foreach (var skin in skinsForSelectedWeapon)
-				{
-					if (!skin.TryGetValue("paint_name", out var paintNameObj) ||
-					    !skin.TryGetValue("paint", out var paintObj)) continue;
-					var paintName = paintNameObj?.ToString();
-					var paint = paintObj?.ToString();
+				var paintName = skin["name"]?.ToString();
+				if (string.IsNullOrEmpty(paintName) || ItemData.SkinPaint(skin) is not { } paint) continue;
 
-					if (!string.IsNullOrEmpty(paintName) && !string.IsNullOrEmpty(paint))
-					{
-						skinSubMenu?.AddMenuOption($"{paintName} ({paint})", handleSkinSelection);
-					}
-				}
+				skinSubMenu?.AddMenuOption($"{paintName} ({paint})", handleSkinSelection);
 			}
 			if (player != null && Utility.IsPlayerValid(player))
 				skinSubMenu?.Open(player);
@@ -510,10 +494,6 @@ public partial class WeaponPaints
 
 	private void SetupGlovesMenu()
 	{
-		var glovesSelectionMenu = Utility.CreateMenu(Localizer["wp_glove_menu_title"]);
-		if (glovesSelectionMenu == null) return;
-		glovesSelectionMenu.PostSelectAction = PostSelectAction.Close;
-			
 		var handleGloveSelection = (CCSPlayerController? player, ChatMenuOption option) =>
 		{
 			if (!Utility.IsPlayerValid(player) || player is null) return;
@@ -618,12 +598,6 @@ public partial class WeaponPaints
 			AddTimer(0.25f, () => GivePlayerGloves(player));
 		};
 
-		// Add weapon options to the weapon selection menu
-		foreach (var paintName in GlovesList.Select(gloveObject => gloveObject["paint_name"]?.ToString() ?? "").Where(paintName => paintName.Length > 0))
-		{
-			glovesSelectionMenu.AddMenuOption(paintName, handleGloveSelection);
-		}
-
 		// Command to open the weapon selection menu for players
 		_config.Additional.CommandGlove.ForEach(c =>
 		{
@@ -636,8 +610,19 @@ public partial class WeaponPaints
 				if (!CommandsCooldown.TryGetValue(player.Slot, out var cooldownEndTime) ||
 				    DateTime.UtcNow >= (CommandsCooldown.TryGetValue(player.Slot, out cooldownEndTime) ? cooldownEndTime : DateTime.UtcNow))
 				{
+					// Built per invocation, like the agents menu: GlovesList is fetched asynchronously on
+					// plugin load, so a menu built once at setup time would have been permanently empty.
+					var glovesSelectionMenu = Utility.CreateMenu(Localizer["wp_glove_menu_title"]);
+					if (glovesSelectionMenu == null) return;
+					glovesSelectionMenu.PostSelectAction = PostSelectAction.Close;
+
+					foreach (var paintName in GlovesList.Select(gloveObject => gloveObject["paint_name"]?.ToString() ?? "").Where(paintName => paintName.Length > 0))
+					{
+						glovesSelectionMenu.AddMenuOption(paintName, handleGloveSelection);
+					}
+
 					CommandsCooldown[player.Slot] = DateTime.UtcNow.AddSeconds(Config.CmdRefreshCooldownSeconds);
-					glovesSelectionMenu?.Open(player);
+					glovesSelectionMenu.Open(player);
 					return;
 				}
 				if (!string.IsNullOrEmpty(Localizer["wp_command_cooldown"]))
@@ -764,10 +749,6 @@ public partial class WeaponPaints
 
 	private void SetupMusicMenu()
 	{
-		var musicSelectionMenu = Utility.CreateMenu(Localizer["wp_music_menu_title"]);
-		if (musicSelectionMenu == null) return;
-		musicSelectionMenu.PostSelectAction = PostSelectAction.Close;
-
 		var handleMusicSelection = (CCSPlayerController? player, ChatMenuOption option) =>
 		{
 			if (!Utility.IsPlayerValid(player) || player is null) return;
@@ -866,13 +847,6 @@ public partial class WeaponPaints
 			}
 		};
 
-		musicSelectionMenu.AddMenuOption(Localizer["None"], handleMusicSelection);
-		// Add weapon options to the weapon selection menu
-		foreach (var paintName in MusicList.Select(musicObject => musicObject["name"]?.ToString() ?? "").Where(paintName => paintName.Length > 0))
-		{
-			musicSelectionMenu.AddMenuOption(paintName, handleMusicSelection);
-		}
-
 		// Command to open the weapon selection menu for players
 		_config.Additional.CommandMusic.ForEach(c =>
 		{
@@ -885,6 +859,17 @@ public partial class WeaponPaints
 				if (!CommandsCooldown.TryGetValue(player.Slot, out var cooldownEndTime) ||
 				    DateTime.UtcNow >= (CommandsCooldown.TryGetValue(player.Slot, out cooldownEndTime) ? cooldownEndTime : DateTime.UtcNow))
 				{
+					// Built per invocation: MusicList arrives asynchronously after plugin load.
+					var musicSelectionMenu = Utility.CreateMenu(Localizer["wp_music_menu_title"]);
+					if (musicSelectionMenu == null) return;
+					musicSelectionMenu.PostSelectAction = PostSelectAction.Close;
+
+					musicSelectionMenu.AddMenuOption(Localizer["None"], handleMusicSelection);
+					foreach (var paintName in MusicList.Select(musicObject => musicObject["name"]?.ToString() ?? "").Where(paintName => paintName.Length > 0))
+					{
+						musicSelectionMenu.AddMenuOption(paintName, handleMusicSelection);
+					}
+
 					CommandsCooldown[player.Slot] = DateTime.UtcNow.AddSeconds(Config.CmdRefreshCooldownSeconds);
 					musicSelectionMenu.Open(player);
 					return;
@@ -899,10 +884,6 @@ public partial class WeaponPaints
 	
 	private void SetupPinsMenu()
 	{
-		var pinsSelectionMenu = Utility.CreateMenu(Localizer["wp_pins_menu_title"]);
-		if (pinsSelectionMenu == null) return;
-		pinsSelectionMenu.PostSelectAction = PostSelectAction.Close;
-
 		var handlePinsSelection = (CCSPlayerController? player, ChatMenuOption option) =>
 		{
 			if (!Utility.IsPlayerValid(player) || player is null) return;
@@ -1001,13 +982,6 @@ public partial class WeaponPaints
 			}
 		};
 
-		pinsSelectionMenu.AddMenuOption(Localizer["None"], handlePinsSelection);
-		// Add weapon options to the weapon selection menu
-		foreach (var paintName in PinsList.Select(musicObject => musicObject["name"]?.ToString() ?? "").Where(paintName => paintName.Length > 0))
-		{
-			pinsSelectionMenu.AddMenuOption(paintName, handlePinsSelection);
-		}
-
 		// Command to open the weapon selection menu for players
 		_config.Additional.CommandPin.ForEach(c =>
 		{
@@ -1020,6 +994,17 @@ public partial class WeaponPaints
 				if (!CommandsCooldown.TryGetValue(player.Slot, out var cooldownEndTime) ||
 				    DateTime.UtcNow >= (CommandsCooldown.TryGetValue(player.Slot, out cooldownEndTime) ? cooldownEndTime : DateTime.UtcNow))
 				{
+					// Built per invocation: PinsList arrives asynchronously after plugin load.
+					var pinsSelectionMenu = Utility.CreateMenu(Localizer["wp_pins_menu_title"]);
+					if (pinsSelectionMenu == null) return;
+					pinsSelectionMenu.PostSelectAction = PostSelectAction.Close;
+
+					pinsSelectionMenu.AddMenuOption(Localizer["None"], handlePinsSelection);
+					foreach (var paintName in PinsList.Select(musicObject => musicObject["name"]?.ToString() ?? "").Where(paintName => paintName.Length > 0))
+					{
+						pinsSelectionMenu.AddMenuOption(paintName, handlePinsSelection);
+					}
+
 					CommandsCooldown[player.Slot] = DateTime.UtcNow.AddSeconds(Config.CmdRefreshCooldownSeconds);
 					pinsSelectionMenu.Open(player);
 					return;

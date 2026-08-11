@@ -71,10 +71,36 @@ namespace WeaponPaints
 
 	public class WeaponPaintsConfig : BasePluginConfig
 	{
-        [JsonPropertyName("ConfigVersion")] public override int Version { get; set; } = 10;
+        [JsonPropertyName("ConfigVersion")] public override int Version { get; set; } = 11;
 
         [JsonPropertyName("SkinsLanguage")]
 		public string SkinsLanguage { get; set; } = "en";
+
+		// Base address the item datasets (skins, gloves, agents, music, collectibles) are pulled from
+		// on plugin load. The plugin requests "<DataUrl>/data/<dataset>.json" and keeps a copy of the last
+		// successful response under CacheDirectory so an outage cannot leave a server with no items.
+		// Leave empty to use the default.
+		[JsonPropertyName("DataUrl")]
+		public string DataUrl { get; set; } = "https://cdn.skinhub.gg";
+
+		// How many hours the copy of a dataset on disk is used as-is, with no request to DataUrl at all.
+		// Past that window the plugin revalidates as normal: a conditional request, which answers 304 with no
+		// body when nothing has changed, or downloads the new version when it has.
+		//
+		// Set to 0 to always revalidate and never skip the check. Note that any window means new items can be
+		// up to that many hours late after a CS2 update; the summary line logged at load says which path every
+		// dataset took, so "my skins are old" is answerable from the console.
+		[JsonPropertyName("CacheDiskHours")]
+		public int CacheDiskHours { get; set; } = 12;
+
+		// Where the item data cache is kept. Empty (the default) means "<plugin folder>/.cache".
+		// A relative path is resolved against the plugin folder, never the process working directory, so
+		// "../.cache" puts the cache beside the plugin folder instead of inside it - which is what to use when
+		// the plugin folder is an ephemeral or read-only mount, as it often is on containerised servers.
+		// If the directory cannot be created or written the plugin still runs from DataUrl, it just has no
+		// offline fallback, and it says so once in the log.
+		[JsonPropertyName("CacheDirectory")]
+		public string CacheDirectory { get; set; } = "";
 
 		[JsonPropertyName("DatabaseHost")]
 		public string DatabaseHost { get; set; } = "";

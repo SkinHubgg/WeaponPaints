@@ -79,13 +79,16 @@ namespace WeaponPaints
 				if (fallbackPaintKit == 0)
 					return;
 			
+				// ItemData.SkinPaint, not w["paint_index"]?.ToObject<int>(): paint_index is null on the
+				// vanilla-knife rows and ToObject<int>() throws ArgumentException on those. This runs for
+				// every weapon a player spawns with.
 				skinInfo = SkinsList
-					.Where(w => 
-						w["weapon_defindex"]?.ToObject<int>() == weaponDefIndex && 
-						w["paint"]?.ToObject<int>() == fallbackPaintKit)
+					.Where(w =>
+						ItemData.SkinDefindex(w) == weaponDefIndex &&
+						ItemData.SkinPaint(w) == fallbackPaintKit)
 					.ToList();
-				
-				isLegacyModel = skinInfo.Count <= 0 || skinInfo[0].Value<bool>("legacy_model");
+
+				isLegacyModel = skinInfo.Count <= 0 || ItemData.SkinIsLegacyModel(skinInfo[0]);
 				UpdatePlayerWeaponMeshGroupMask(player, weapon, isLegacyModel);
 				return;
 			}
@@ -127,13 +130,14 @@ namespace WeaponPaints
 			if (weaponInfo.KeyChain != null) SetKeychain(player, weapon);
 			if (weaponInfo.Stickers.Count > 0) SetStickers(player, weapon);
 
+			// See the note above: SkinPaint is null-safe, a direct ToObject<int>() on paint_index is not.
 			skinInfo = SkinsList
-				.Where(w => 
-					w["weapon_defindex"]?.ToObject<int>() == weaponDefIndex && 
-					w["paint"]?.ToObject<int>() == fallbackPaintKit)
+				.Where(w =>
+					ItemData.SkinDefindex(w) == weaponDefIndex &&
+					ItemData.SkinPaint(w) == fallbackPaintKit)
 				.ToList();
-				
-			isLegacyModel = skinInfo.Count <= 0 || skinInfo[0].Value<bool>("legacy_model");
+
+			isLegacyModel = skinInfo.Count <= 0 || ItemData.SkinIsLegacyModel(skinInfo[0]);
 			UpdatePlayerWeaponMeshGroupMask(player, weapon, isLegacyModel);
 		}
 		
@@ -441,14 +445,14 @@ namespace WeaponPaints
 			Random rnd = new Random();
 
 			// Filter weapons by the provided defindex
-			var filteredWeapons = SkinsList.Where(w => w["weapon_defindex"]?.ToString() == defindex.ToString()).ToList();
+			var filteredWeapons = SkinsList.Where(w => ItemData.SkinDefindex(w) == defindex).ToList();
 
 			if (filteredWeapons.Count == 0)
 				return 0;
 
 			var randomWeapon = filteredWeapons[rnd.Next(filteredWeapons.Count)];
 
-			return int.TryParse(randomWeapon["paint"]?.ToString(), out var paintValue) ? paintValue : 0;
+			return ItemData.SkinPaint(randomWeapon) ?? 0;
 		}
 
 		//xstage idea on css discord

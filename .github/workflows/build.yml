@@ -58,23 +58,14 @@ jobs:
           ${{ env.OUTPUT_PATH }}/McMaster.NETCore.Plugins.dll \
           ${{ env.OUTPUT_PATH }}/Microsoft.DotNet.PlatformAbstractions.dll \
           ${{ env.OUTPUT_PATH }}/Microsoft.Extensions.DependencyModel.dll \
-    - name: Copy skins
-      run: cp -R website/data ${{ env.OUTPUT_PATH }}
+    # No item data is copied into the archive: the plugin fetches it from DataUrl at load time and caches
+    # it in its own folder. The PHP website is gone from this fork, so there is no second artifact either.
     - name: Zip
       run: zip -r "${{ env.PROJECT_NAME }}.zip" "${{ env.OUTPUT_PATH }}" gamedata/
-    - name: Clean files Website
-      run: |
-        rm -rf website/img/
-    - name: Zip
-      uses: thedoctor0/zip-release@0.7.5
-      with:
-        type: 'zip'
-        filename: '${{ env.PROJECT_NAME }}-Website.zip'
-        path: website
     - name: WeaponPaints
       uses: ncipollo/release-action@v1.12.0
       with:
-        artifacts: "${{ env.PROJECT_NAME }}.zip,${{ env.PROJECT_NAME }}-Website.zip"
+        artifacts: "${{ env.PROJECT_NAME }}.zip"
         name: "Build ${{ env.BUILD_NUMBER }}"
         tag: "build-${{ env.BUILD_NUMBER }}"
         body: |

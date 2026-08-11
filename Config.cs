@@ -93,6 +93,7 @@ namespace WeaponPaints
 		[JsonPropertyName("CacheDiskHours")]
 		public int CacheDiskHours { get; set; } = 12;
 
+
 		// Where the item data cache is kept. Empty (the default) means "<plugin folder>/.cache".
 		// A relative path is resolved against the plugin folder, never the process working directory, so
 		// "../.cache" puts the cache beside the plugin folder instead of inside it - which is what to use when

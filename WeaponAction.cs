@@ -173,13 +173,34 @@ namespace WeaponPaints
 
 			foreach (var sticker in weaponInfo.Stickers)
 			{
-				int stickerSlot = weaponInfo.Stickers.IndexOf(sticker);
+				// The COLUMN this sticker came from, not its position in the list. See StickerInfo.Slot
+				// for what `Stickers.IndexOf(sticker)` used to do to a player with a gap in their slots.
+				int stickerSlot = sticker.Slot;
 
 				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
 					$"sticker slot {stickerSlot} id", ViewAsFloat(sticker.Id));
-				if (sticker.OffsetX != 0 || sticker.OffsetY != 0)
-					CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
-						$"sticker slot {stickerSlot} schema", 0);
+
+				// *** UNCONDITIONAL, AND FROM THE COLUMN. This is the bug that put stickers in the wrong
+				// place in game while the same item inspected correctly. ***
+				//
+				// It used to be written only `if (sticker.OffsetX != 0 || sticker.OffsetY != 0)`, and the
+				// plugin's own changelog says what the attribute is for: "3.2b - Schema for stickers when
+				// using custom coords". The schema is what makes the game honour the offset attributes AT
+				// ALL. So a sticker deliberately left at its slot's default position never got it, and the
+				// game placed that sticker by its own rules instead of by ours - which is exactly the
+				// report: an item that renders correctly from an inspect link and wrongly through the
+				// plugin, because an inspect link carries the schema in its payload and never had to
+				// decide.
+				//
+				// Zero is also a legitimate value rather than a sentinel, so "did the user set an offset"
+				// was never a question this could answer.
+				//
+				// It now comes from `sticker.Schema` - field 2 of `id;schema;x;y;wear;scale;rotation` -
+				// rather than a hardcoded 0, because the column has always carried it and the writers on
+				// the website already populate it.
+				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
+					$"sticker slot {stickerSlot} schema", ViewAsFloat(sticker.Schema));
+
 				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
 					$"sticker slot {stickerSlot} offset x", sticker.OffsetX);
 				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,

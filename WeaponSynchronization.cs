@@ -255,6 +255,8 @@ internal class WeaponSynchronization
 						
 					StickerInfo stickerInfo = new StickerInfo
 					{
+						// The COLUMN index, not the list position - see StickerInfo.Slot.
+						Slot = i,
 						Id = stickerId,
 						Schema = stickerSchema,
 						OffsetX = stickerOffsetX,
@@ -502,9 +504,45 @@ internal class WeaponSynchronization
 					}
 					else
 					{
-						// Insert new record
-						query = "INSERT INTO `wp_player_skins` (`steamid`, `weapon_defindex`, `weapon_team`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`) " +
-						        "VALUES (@steamid, @weaponDefIndex, @weaponTeam, @paintId, @wear, @seed)";
+						/*
+						 * *** INSERTING A NEW TEAM ROW USED TO DESTROY THE PLAYER'S STICKERS AND CHARM. ***
+						 *
+						 * The old statement listed only paint, wear and seed, so the five sticker columns and
+						 * the charm took their DDL defaults ('0;0;0;0;0;0;0'). That is fine in isolation and
+						 * fatal in combination with how the rows are READ: `LoadWeaponPaintsFromDatabase`
+						 * runs `ORDER BY weapon_team ASC`, so a team-0 row ("Both") is loaded into both the T
+						 * and CT dictionaries FIRST and any later team-2 or team-3 row overwrites it.
+						 *
+						 * So: a player sets stickers on the website against team 0, then touches the in-game
+						 * menu, which inserts empty team-2 and team-3 rows - and from then on the game reads
+						 * those instead. The stickers are still in the database and never appear again. There
+						 * were 14 such shadowed pairs live when this was found.
+						 *
+						 * The fix carries the placement across from whatever row the player already has for
+						 * this weapon, preferring team 0 since that is the one the website writes. The
+						 * derived table with the LEFT JOIN is not decoration: a plain `INSERT ... SELECT`
+						 * from the same table yields NO ROWS when the player has no existing row for this
+						 * weapon, which would turn the first save of a new weapon into a silent no-op.
+						 */
+						query =
+							"INSERT INTO `wp_player_skins` " +
+							"(`steamid`, `weapon_defindex`, `weapon_team`, `weapon_paint_id`, `weapon_wear`, `weapon_seed`, " +
+							" `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_keychain`) " +
+							"SELECT @steamid, @weaponDefIndex, @weaponTeam, @paintId, @wear, @seed, " +
+							"  COALESCE(src.`weapon_sticker_0`, '0;0;0;0;0;0;0'), " +
+							"  COALESCE(src.`weapon_sticker_1`, '0;0;0;0;0;0;0'), " +
+							"  COALESCE(src.`weapon_sticker_2`, '0;0;0;0;0;0;0'), " +
+							"  COALESCE(src.`weapon_sticker_3`, '0;0;0;0;0;0;0'), " +
+							"  COALESCE(src.`weapon_sticker_4`, '0;0;0;0;0;0;0'), " +
+							"  COALESCE(src.`weapon_keychain`, '0;0;0;0;0') " +
+							"FROM (SELECT 1) AS d " +
+							"LEFT JOIN ( " +
+							"  SELECT `weapon_sticker_0`, `weapon_sticker_1`, `weapon_sticker_2`, `weapon_sticker_3`, `weapon_sticker_4`, `weapon_keychain` " +
+							"  FROM `wp_player_skins` " +
+							"  WHERE `steamid` = @steamid AND `weapon_defindex` = @weaponDefIndex " +
+							"  ORDER BY (`weapon_team` <> 0), `weapon_team` " +
+							"  LIMIT 1 " +
+							") AS src ON 1 = 1";
 						parameters = new { steamid = player.SteamId, weaponDefIndex, weaponTeam = (int)teamId, paintId, wear, seed };
 					}
 

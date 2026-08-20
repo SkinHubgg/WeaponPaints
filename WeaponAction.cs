@@ -201,9 +201,39 @@ namespace WeaponPaints
 				 * right where the list position is only accidentally right, and it is what a player with
 				 * a gap in their slots needs.
 				 */
+				/*
+				 * *** THE VALUE IS THE SLOT'S OWN INDEX, NOT 0 - and this is an EXPERIMENT, stated as one. ***
+				 *
+				 * What is known: `sticker slot N schema` is a real econ attribute (items_game ids 290-295,
+				 * six slots, `stored_as_integer 1`, `hidden 1`) with **no declared range, no default, and
+				 * no item in the game that sets it**. It appears in no shader uniform and in no field of
+				 * the inspect protobuf - so the claim in 9d000024 that "an inspect link carries the schema"
+				 * was simply false, and the reasoning built on it was worthless.
+				 *
+				 * What is observed, in game, by the owner:
+				 *   - written as 0 on EVERY sticker  -> all five stickers land on ONE position
+				 *   - written as 0 only on moved ones -> still clustered and misaligned
+				 *
+				 * Both readings are consistent with `schema` naming WHICH SLOT'S AUTHORED HOME the sticker
+				 * is anchored to. Everything pointed at 0 is everything pointed at slot 0's home, which is
+				 * exactly the picture. The plugin's original author agreed: his first version wrote
+				 * `stickerSlot` here, and it was only later changed to a literal 0.
+				 *
+				 * So each sticker is anchored to its OWN slot, which under that reading is the identity -
+				 * the placement it would have had anyway - and the offsets are then deltas from it.
+				 *
+				 * *** THE GUARD STAYS. *** Only a sticker the user actually moved gets the attribute. A
+				 * sticker nobody dragged is left with no attribute at all, which is the behaviour that has
+				 * always worked, and it keeps the blast radius to the stickers this is trying to fix. If
+				 * this reading is wrong, the failure is confined to moved stickers rather than all of them.
+				 *
+				 * `sticker.Schema` is deliberately NOT used: it is 0 in all 300,780 rows of
+				 * `wp_player_skins` and nothing on the website can set it to anything else, so reading the
+				 * column can only ever reproduce the bug this replaces.
+				 */
 				if (sticker.OffsetX != 0 || sticker.OffsetY != 0)
 					CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
-						$"sticker slot {stickerSlot} schema", ViewAsFloat(sticker.Schema));
+						$"sticker slot {stickerSlot} schema", ViewAsFloat((uint)stickerSlot));
 
 				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
 					$"sticker slot {stickerSlot} offset x", sticker.OffsetX);

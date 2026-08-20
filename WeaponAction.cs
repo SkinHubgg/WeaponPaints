@@ -180,26 +180,30 @@ namespace WeaponPaints
 				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
 					$"sticker slot {stickerSlot} id", ViewAsFloat(sticker.Id));
 
-				// *** UNCONDITIONAL, AND FROM THE COLUMN. This is the bug that put stickers in the wrong
-				// place in game while the same item inspected correctly. ***
-				//
-				// It used to be written only `if (sticker.OffsetX != 0 || sticker.OffsetY != 0)`, and the
-				// plugin's own changelog says what the attribute is for: "3.2b - Schema for stickers when
-				// using custom coords". The schema is what makes the game honour the offset attributes AT
-				// ALL. So a sticker deliberately left at its slot's default position never got it, and the
-				// game placed that sticker by its own rules instead of by ours - which is exactly the
-				// report: an item that renders correctly from an inspect link and wrongly through the
-				// plugin, because an inspect link carries the schema in its payload and never had to
-				// decide.
-				//
-				// Zero is also a legitimate value rather than a sentinel, so "did the user set an offset"
-				// was never a question this could answer.
-				//
-				// It now comes from `sticker.Schema` - field 2 of `id;schema;x;y;wear;scale;rotation` -
-				// rather than a hardcoded 0, because the column has always carried it and the writers on
-				// the website already populate it.
-				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
-					$"sticker slot {stickerSlot} schema", ViewAsFloat(sticker.Schema));
+				/*
+				 * *** ONLY WHEN THE STICKER HAS ACTUALLY BEEN MOVED, and writing it unconditionally was a
+				 * REGRESSION I shipped. ***
+				 *
+				 * The owner's report: "the weaponpaints fix just made all the stickers go to the first
+				 * sticker placement/position instead of putting them on the position we chose".
+				 *
+				 * The reasoning that led to writing it always was that `schema` is what makes custom
+				 * coordinates apply - true - and that a sticker at 0,0 is indistinguishable from one that
+				 * was never moved. That second half is the mistake. A sticker nobody dragged carries the
+				 * column default, and the website has no control that sets `schema` to anything but 0
+				 * (`DEFAULT_STICKER.schema` is 0 and the row default is `0;0;0;0;0;0;0`), so writing it
+				 * unconditionally means every untouched sticker is now explicitly told to use schema 0
+				 * rather than left alone to sit at its own slot's authored home. Five stickers all told
+				 * to use one schema is five stickers in one place.
+				 *
+				 * The guard is therefore back exactly as it was. The other half of that commit -
+				 * `sticker.Slot` instead of `Stickers.IndexOf(sticker)` - is KEPT: the column index is
+				 * right where the list position is only accidentally right, and it is what a player with
+				 * a gap in their slots needs.
+				 */
+				if (sticker.OffsetX != 0 || sticker.OffsetY != 0)
+					CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
+						$"sticker slot {stickerSlot} schema", ViewAsFloat(sticker.Schema));
 
 				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
 					$"sticker slot {stickerSlot} offset x", sticker.OffsetX);

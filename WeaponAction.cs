@@ -227,13 +227,43 @@ namespace WeaponPaints
 				 * always worked, and it keeps the blast radius to the stickers this is trying to fix. If
 				 * this reading is wrong, the failure is confined to moved stickers rather than all of them.
 				 *
-				 * `sticker.Schema` is deliberately NOT used: it is 0 in all 300,780 rows of
-				 * `wp_player_skins` and nothing on the website can set it to anything else, so reading the
-				 * column can only ever reproduce the bug this replaces.
+				 * *** THE COLUMN WINS WHEN IT NAMES AN ANCHOR, AND THAT IS WHAT THE FIFTH SLOT NEEDS. ***
+				 *
+				 * A slot's home is the weapon MODEL's, and a weapon does not have one per slot. Read out of the
+				 * live game files rather than inferred:
+				 *
+				 *   - `weapon_rif_ak47.vmdl_c` authors FOUR `StickerMarkup` homes, `Index` 0..3, on both
+				 *     `body_hd` and `body_legacy`. There is no home 4.
+				 *   - `weapon_rif_ak47.vmat_c` bakes `g_vSticker4Offset [0 0]` and `g_vSticker4Scale [0 0]`, and a
+				 *     zero scale is the pixel shader's SKIP, not a size: `csgo_weapon_vulkan_50_ps.static512`
+				 *     line 647 breaks out of the slot when `g_vStickerNScale.x` or `.y` is 0.
+				 *   - so slot 4 anchored to home 4 points at a home the AK has not got, and the fifth sticker
+				 *     draws nothing. That is the reported disappearance, and it is not a plugin bug.
+				 *
+				 * 11 of the 35 sticker-capable weapons are in that shape; the other 24 author a fifth home on at
+				 * least one mesh variant, which is why a fifth sticker appears on some guns and not on the AK.
+				 *
+				 * So the fifth has to hang off a home the weapon DOES author, with its offsets as deltas from
+				 * that home. Only the website knows the markup table, so the anchor travels in the column that
+				 * has always been there for it: `schema` is now READ, and 0 means "not named, use the slot's own
+				 * index". That keeps today's behaviour EXACTLY for all 300,780 existing rows, and limits the
+				 * blast radius to rows something deliberately writes an anchor into.
+				 *
+				 * The cost of 0 meaning "unset" is that the column cannot name home 0. It does not need to: of
+				 * the 29 weapon+mesh variants with no fifth home, 28 have a home at index 1..3 whose authored
+				 * SIZE is the one the fifth should be drawn at, so the anchor is picked from those. Only the
+				 * Galil's legacy mesh has to borrow a home of a different size.
+				 *
+				 * `ViewAsFloat` because `sticker slot N schema` is `stored_as_integer 1`, the same as
+				 * `sticker slot N id`. UNVERIFIED for this attribute specifically: the only value ever written
+				 * to it was 0, where the bit pattern and the plain float agree. If a named anchor does nothing in
+				 * game, a plain `(float)stickerAnchor` is the next thing to try.
 				 */
-				if (sticker.OffsetX != 0 || sticker.OffsetY != 0)
+				uint stickerAnchor = sticker.Schema != 0 ? sticker.Schema : (uint)stickerSlot;
+
+				if (sticker.OffsetX != 0 || sticker.OffsetY != 0 || sticker.Schema != 0)
 					CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
-						$"sticker slot {stickerSlot} schema", ViewAsFloat((uint)stickerSlot));
+						$"sticker slot {stickerSlot} schema", ViewAsFloat(stickerAnchor));
 
 				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
 					$"sticker slot {stickerSlot} offset x", sticker.OffsetX);

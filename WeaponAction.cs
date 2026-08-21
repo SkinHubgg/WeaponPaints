@@ -567,6 +567,31 @@ namespace WeaponPaints
 
 		private static void GivePlayerAgent(CCSPlayerController player)
 		{
+			/*
+			 * *** DO NOT SET A MODEL BEFORE THE AGENT DATASET HAS LOADED. ***
+			 *
+			 * `AgentsList` starts empty and is filled by `ItemData` from `<DataUrl>/data/agents.json`.
+			 * That fetch is DELIBERATELY NOT AWAITED - `WeaponPaints.cs` says so - so it runs on a worker
+			 * while the server is already accepting connections. A player joining inside that window
+			 * reaches here with the list still empty.
+			 *
+			 * What arrives here is a model path out of the DATABASE, not out of the list, so an empty
+			 * list does not stop the `SetModel` call - it only removes the one thing that could have
+			 * told us the path is still a real agent. Setting an unvalidated model on a pawn is how a
+			 * player ends up looking wrong or not rendering at all, and it is silent: the try/catch
+			 * below swallows whatever comes back.
+			 *
+			 * So this waits instead. A player who joins in that window keeps the default model for a few
+			 * seconds and gets their agent on the next application, which is a far better failure than a
+			 * broken one. If the fetch never succeeds at all, nobody gets an agent and the log below says
+			 * why - which beats every player on the server looking wrong with no explanation.
+			 */
+			if (AgentsList.Count == 0)
+			{
+				Utility.Log("[WeaponPaints] agents dataset not loaded yet - skipping agent for this player");
+				return;
+			}
+
 			if (!GPlayersAgent.TryGetValue(player.Slot, out var value)) return;
 
 			var model = player.TeamNum == 3 ? value.CT : value.T;

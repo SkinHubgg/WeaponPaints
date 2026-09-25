@@ -56,7 +56,15 @@ namespace WeaponPaints
 			List<JObject> skinInfo;
 			bool isLegacyModel;
 
-			if (_config.Additional.GiveRandomSkin &&
+			// A row with no paint that still carries stickers, a charm or a name tag - every C4 row, and a gun saved
+			// as "Default" with stickers on it. The paint path below returns on paint 0 before it reaches the
+			// stickers, so these used to be dropped. See C4Stickers.cs.
+			if (!isKnife && TryApplyNoPaintRow(player, weapon, weaponDefIndex))
+				return;
+
+			// The C4 has no paint kits: a "random skin" for it would be paint 0 plus texture attributes that describe
+			// nothing, so the bomb is left alone.
+			if (_config.Additional.GiveRandomSkin && weaponDefIndex != C4DefIndex &&
 			    !HasChangedPaint(player, weaponDefIndex, out _))
 			{
 				// Random skins
@@ -144,7 +152,10 @@ namespace WeaponPaints
 			 *
 			 * Nothing else changes: the mesh group mask is still applied last, off the same value.
 			 */
-			isLegacyModel = skinInfo.Count <= 0 || ItemData.SkinIsLegacyModel(skinInfo[0]);
+			// The C4 is always its one hd mesh (weapon_c4.vmdl has no mesh groups). It cannot have a paint, so this
+			// is belt and braces - the no-paint branch above is where a C4 row actually goes.
+			isLegacyModel = weaponDefIndex != C4DefIndex &&
+			                (skinInfo.Count <= 0 || ItemData.SkinIsLegacyModel(skinInfo[0]));
 
 			if (weaponInfo.KeyChain != null) SetKeychain(player, weapon);
 			if (weaponInfo.Stickers.Count > 0) SetStickers(player, weapon, isLegacyModel);
@@ -179,16 +190,34 @@ namespace WeaponPaints
 
 			int weaponDefIndex = weapon.AttributeManager.Item.ItemDefinitionIndex;
 
-			if (!HasChangedPaint(player ,weaponDefIndex, out var weaponInfo) || weaponInfo == null)
+			// HasWeaponRow, not HasChangedPaint: a row with no paint reaches here too now (the C4, and a "Default"
+			// gun with stickers - see C4Stickers.cs). On the paint path both return the same row.
+			if (!HasWeaponRow(player, weaponDefIndex, out var weaponInfo) || weaponInfo == null)
 				return;
 
+			WriteStickerAttributes(weapon.AttributeManager.Item, weaponDefIndex, weaponInfo, isLegacyModel);
+
+			if (_temporaryPlayerWeaponWear.TryGetValue(player.Slot, out var playerWear) &&
+				playerWear.TryGetValue(weaponDefIndex, out float storedWear))
+			{
+				weapon.FallbackWear = storedWear;
+			}
+		}
+
+		/// <summary>
+		/// The sticker attributes of one row, written onto any econ item - a weapon's, or the planted bomb's (which is
+		/// not a weapon, see C4Stickers.OnBombPlantedC4). Split out of SetStickers for that reason only; the body is
+		/// unchanged. The C4's fifth slot takes its borrowed home from StickerAnchors like any four-home gun.
+		/// </summary>
+		private static void WriteStickerAttributes(CEconItemView item, int weaponDefIndex, WeaponInfo weaponInfo, bool isLegacyModel)
+		{
 			foreach (var sticker in weaponInfo.Stickers)
 			{
 				// The COLUMN this sticker came from, not its position in the list. See StickerInfo.Slot
 				// for what `Stickers.IndexOf(sticker)` used to do to a player with a gap in their slots.
 				int stickerSlot = sticker.Slot;
 
-				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
+				CAttributeListSetOrAddAttributeValueByName.Invoke(item.NetworkedDynamicAttributes.Handle,
 					$"sticker slot {stickerSlot} id", ViewAsFloat(sticker.Id));
 
 				/*
@@ -293,25 +322,19 @@ namespace WeaponPaints
 				}
 
 				if (stickerOffsetX != 0 || stickerOffsetY != 0 || anchored)
-					CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
+					CAttributeListSetOrAddAttributeValueByName.Invoke(item.NetworkedDynamicAttributes.Handle,
 						$"sticker slot {stickerSlot} schema", ViewAsFloat(stickerAnchor));
 
-				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
+				CAttributeListSetOrAddAttributeValueByName.Invoke(item.NetworkedDynamicAttributes.Handle,
 					$"sticker slot {stickerSlot} offset x", stickerOffsetX);
-				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
+				CAttributeListSetOrAddAttributeValueByName.Invoke(item.NetworkedDynamicAttributes.Handle,
 					$"sticker slot {stickerSlot} offset y", stickerOffsetY);
-				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
+				CAttributeListSetOrAddAttributeValueByName.Invoke(item.NetworkedDynamicAttributes.Handle,
 					$"sticker slot {stickerSlot} wear", sticker.Wear);
-				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
+				CAttributeListSetOrAddAttributeValueByName.Invoke(item.NetworkedDynamicAttributes.Handle,
 					$"sticker slot {stickerSlot} scale", sticker.Scale);
-				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
+				CAttributeListSetOrAddAttributeValueByName.Invoke(item.NetworkedDynamicAttributes.Handle,
 					$"sticker slot {stickerSlot} rotation", sticker.Rotation);
-			}
-
-			if (_temporaryPlayerWeaponWear.TryGetValue(player.Slot, out var playerWear) &&
-				playerWear.TryGetValue(weaponDefIndex, out float storedWear))
-			{
-				weapon.FallbackWear = storedWear;
 			}
 		}
 
@@ -321,7 +344,8 @@ namespace WeaponPaints
 
 			int weaponDefIndex = weapon.AttributeManager.Item.ItemDefinitionIndex;
 
-			if (!HasChangedPaint(player, weaponDefIndex, out var value) || value?.KeyChain == null)
+			// HasWeaponRow for the same reason as SetStickers: a charm on the C4 or on a "Default" gun has no paint.
+			if (!HasWeaponRow(player, weaponDefIndex, out var value) || value?.KeyChain == null)
 				return;
 			
 			var keyChain = value.KeyChain;
@@ -593,6 +617,10 @@ namespace WeaponPaints
 
 		private void UpdatePlayerWeaponMeshGroupMask(CCSPlayerController player, CBasePlayerWeapon weapon, bool isLegacy)
 		{
+			// weapon_c4.vmdl has no mesh groups (m_meshGroups = []): there is no "body" group to set and no legacy
+			// mesh to pick, so the bomb always keeps its one hd mesh.
+			if (weapon.AttributeManager.Item.ItemDefinitionIndex == C4DefIndex) return;
+
 			UpdateWeaponMeshGroupMask(weapon, isLegacy);
 		}
 

@@ -18,9 +18,9 @@ public partial class WeaponPaints : BasePlugin, IPluginConfig<WeaponPaintsConfig
 	public WeaponPaintsConfig Config { get; set; } = new();
     private static WeaponPaintsConfig _config { get; set; } = new();
     public override string ModuleAuthor => "Nereziel & daffyy";
-	public override string ModuleDescription => "Skin, gloves, agents and knife selector, standalone and web-based";
+	public override string ModuleDescription => "Skin, gloves, agents, knife and pet selector, standalone and web-based";
 	public override string ModuleName => "WeaponPaints";
-	public override string ModuleVersion => "3.3b";
+	public override string ModuleVersion => "3.4b";
 
 	public override void Load(bool hotReload)
 	{
@@ -42,6 +42,7 @@ public partial class WeaponPaints : BasePlugin, IPluginConfig<WeaponPaintsConfig
 			GPlayersAgent.Clear();
 			GPlayersPin.Clear();
 			GPlayersMusic.Clear();
+			GPlayersPet.Clear();
 
 			foreach (var player in Enumerable
 				         .OfType<CCSPlayerController>(Utilities.GetPlayers().TakeWhile(_ => WeaponSync != null))
@@ -77,8 +78,9 @@ public partial class WeaponPaints : BasePlugin, IPluginConfig<WeaponPaintsConfig
 
 		if (config.DatabaseHost.Length < 1 || config.DatabaseName.Length < 1 || config.DatabaseUser.Length < 1)
 		{
-			// Was Unload(false), which is a no-op - BasePlugin.Unload has an empty body and this plugin does
-			// not override it, so the plugin used to carry on loading with no database at all. See Disable().
+			// Was Unload(false), which is a no-op - BasePlugin.Unload has an empty body and this plugin only
+			// overrides it to remove its pets (Pets.cs), so the plugin used to carry on loading with no database
+			// at all. See Disable().
 			Disable("Database credentials are not set in \"configs/plugins/WeaponPaints/WeaponPaints.json\"");
 			return;
 		}
@@ -129,7 +131,7 @@ public partial class WeaponPaints : BasePlugin, IPluginConfig<WeaponPaintsConfig
 	///     version. Hence the catch below - without it this would look like a crash instead of a clean stop.
 	///
 	/// BasePlugin.Unload(bool) is NOT an alternative: its body is empty, so calling it on yourself does
-	/// nothing at all.
+	/// nothing at all (the override in Pets.cs only removes the pets).
 	/// </summary>
 	private void Disable(string reason)
 	{
@@ -169,6 +171,8 @@ public partial class WeaponPaints : BasePlugin, IPluginConfig<WeaponPaintsConfig
 				SetupMusicMenu();
 			if (Config.Additional.PinsEnabled)
 				SetupPinsMenu();
+			if (Config.Additional.PetsEnabled)
+				SetupPetsMenu();
 		
 			RegisterCommands();
 		}

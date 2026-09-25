@@ -349,6 +349,9 @@ namespace WeaponPaints
 			if (Config.Additional.ShowSkinImage)
 				RegisterListener<Listeners.OnTick>(OnTick);
 
+			RegisterC4Listeners();
+			RegisterPetListeners();
+
 			VirtualFunctions.GiveNamedItemFunc.Hook(OnGiveNamedItemPost, HookMode.Post);
 		}
 	}

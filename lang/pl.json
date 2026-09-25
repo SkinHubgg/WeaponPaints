@@ -26,5 +26,26 @@
 
 	"wp_stattrak_action": "Pomyślnie zmieniłeś ustawienie stattraka",
 	
+	"wp_info_pet": "Wpisz {lime}!pet{default}, aby otworzyć menu zwierzaka",
+	"wp_pet_menu_title": "Menu Zwierzaka",
+	"wp_pet_menu_stage_title": "Wybierz etap dla {lime}{0}{default}",
+	"wp_pet_menu_random_look": "Nowy losowy wygląd",
+	"wp_pet_menu_select": "Wybrałeś {lime}{0}{default} jako swojego zwierzaka",
+	"wp_pet_menu_removed": "Twój zwierzak zostanie w domu",
+	"wp_pet_stage_egg": "Jajo",
+	"wp_pet_stage_chick": "Pisklę",
+	"wp_pet_stage_pullet": "Kurka",
+	"wp_pet_stage_hen": "Kura",
+	"wp_pet_stage_set": "Etap twojego zwierzaka: {lime}{0}{default}",
+	"wp_pet_name_set": "Twój zwierzak nazywa się teraz {lime}{0}{default}",
+	"wp_pet_name_cleared": "Twój zwierzak nie ma już imienia",
+	"wp_pet_seed_set": "Seed wyglądu twojego zwierzaka to teraz {lime}{0}{default}",
+	"wp_pet_variant_set": "Kolor twojego zwierzaka to teraz {lime}#{0}{default}",
+	"wp_pet_variant_cleared": "Kolor twojego zwierzaka zależy teraz od seeda",
+	"wp_pet_none": "Nie masz jeszcze zwierzaka. Wpisz {lime}!pet{default}, aby go wybrać",
+	"wp_pet_invalid": "{lightred}Ta wartość jest nieprawidłowa",
+	"wp_pet_no_permission": "{lightred}Nie masz dostępu do zwierzaków",
+	"wp_pet_usage": "{lime}!pet{default} menu, {lime}!pet name <imię>{default}, {lime}!pet seed [liczba]{default}, {lime}!pet color <liczba|random>{default}, {lime}!pet stage <chick|pullet|hen>{default}, {lime}!pet off{default}",
+
 	"None": "Brak"
 }

@@ -35,6 +35,8 @@ internal class WeaponSynchronization
 				GetWeaponPaintsFromDatabase(player, connection);
 			if (_config.Additional.PinsEnabled)
 				GetPinsFromDatabase(player, connection);
+			if (_config.Additional.PetsEnabled)
+				GetPetFromDatabase(player, connection);
 		}
 		catch (Exception ex)
 		{
@@ -384,6 +386,95 @@ internal class WeaponSynchronization
 		catch (Exception ex)
 		{
 			Utility.Log($"An error occurred in GetPinsFromDatabase: {ex.Message}");
+		}
+	}
+
+	private void GetPetFromDatabase(PlayerInfo? player, MySqlConnection connection)
+	{
+		try
+		{
+			if (!_config.Additional.PetsEnabled || player == null || string.IsNullOrEmpty(player.SteamId))
+				return;
+
+			const string query = "SELECT `pet_id`, `pet_stage`, `pet_variant`, `pet_seed`, `pet_name` FROM `wp_player_pets` WHERE `steamid` = @steamid";
+			var row = connection.QueryFirstOrDefault(query, new { steamid = player.SteamId }) as IDictionary<string, object>;
+
+			static object? Column(IDictionary<string, object> source, string name) =>
+				source.TryGetValue(name, out var value) && value is not DBNull ? value : null;
+
+			// No row means no pet - including one removed on the website since the last load, which is why the
+			// cache entry is dropped rather than left alone.
+			if (row == null || Column(row, "pet_id") is not { } petId)
+			{
+				WeaponPaints.GPlayersPet.TryRemove(player.Slot, out _);
+			}
+			else
+			{
+				// Convert.* rather than casts: MySqlConnector hands back sbyte for TINYINT, uint for INT UNSIGNED
+				// and int for INT, and a website that created the table itself may have picked other widths.
+				WeaponPaints.GPlayersPet[player.Slot] = new PetInfo
+				{
+					PetId = Convert.ToInt32(petId, CultureInfo.InvariantCulture),
+					Stage = Column(row, "pet_stage") is { } stage
+						? Convert.ToInt32(stage, CultureInfo.InvariantCulture)
+						: WeaponPaints.PetStageHen,
+					Variant = Column(row, "pet_variant") is { } variant
+						? Convert.ToInt32(variant, CultureInfo.InvariantCulture)
+						: null,
+					Seed = Column(row, "pet_seed") is { } seed ? Convert.ToUInt32(seed, CultureInfo.InvariantCulture) : 0u,
+					Name = Column(row, "pet_name") is { } name ? Convert.ToString(name, CultureInfo.InvariantCulture) : null
+				};
+			}
+
+			// Picked up by the pet timer on the game thread; this runs on a worker.
+			WeaponPaints.QueuePetSpawn(player.Slot);
+		}
+		catch (Exception ex)
+		{
+			Utility.Log($"An error occurred in GetPetFromDatabase: {ex.Message}");
+		}
+	}
+
+	internal async Task SyncPetToDatabase(PlayerInfo player, PetInfo? pet)
+	{
+		if (!_config.Additional.PetsEnabled || string.IsNullOrEmpty(player.SteamId)) return;
+
+		try
+		{
+			await using var connection = await _database.GetConnectionAsync();
+
+			// pet_id is NOT NULL, so "no pet" is the absence of a row, the same as the website writes it.
+			if (pet == null)
+			{
+				await connection.ExecuteAsync("DELETE FROM `wp_player_pets` WHERE `steamid` = @steamid",
+					new { steamid = player.SteamId });
+				return;
+			}
+
+			const string query = """
+			                     INSERT INTO `wp_player_pets` (`steamid`, `pet_id`, `pet_stage`, `pet_variant`, `pet_seed`, `pet_name`)
+			                     VALUES(@steamid, @pet_id, @pet_stage, @pet_variant, @pet_seed, @pet_name)
+			                     ON DUPLICATE KEY UPDATE
+			                     	`pet_id` = @pet_id,
+			                     	`pet_stage` = @pet_stage,
+			                     	`pet_variant` = @pet_variant,
+			                     	`pet_seed` = @pet_seed,
+			                     	`pet_name` = @pet_name
+			                     """;
+
+			await connection.ExecuteAsync(query, new
+			{
+				steamid = player.SteamId,
+				pet_id = pet.PetId,
+				pet_stage = pet.Stage,
+				pet_variant = pet.Variant,
+				pet_seed = pet.Seed,
+				pet_name = string.IsNullOrEmpty(pet.Name) ? null : pet.Name
+			});
+		}
+		catch (Exception e)
+		{
+			Utility.Log($"Error syncing pet to database: {e.Message}");
 		}
 	}
 

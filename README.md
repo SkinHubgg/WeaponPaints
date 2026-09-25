@@ -19,6 +19,8 @@ Unfinished, unoptimized and not fully functional ugly demo weapon paints plugin 
 - Added command **`!agents`** to show menu with agents
 - Added command **`!pins`** to show menu with pins
 - Added command **`!music`** to show menu with music
+- Added command **`!pet`** to show menu with chicken pets (CS2 1.41.8.2), see [Pets](#pets)
+- Stickers and charms on the **C4** (CS2 1.41.8.2), and on guns saved as "Default" (paint 0), see [C4 stickers](#c4-stickers)
 - Translations support, submit a PR if you want to share your translation
 
 ## ⚙️ Requirements
@@ -80,6 +82,96 @@ once, when the plugin loads, from the address in `DataUrl` (default `https://cdn
   `STALE cache, DataUrl unreachable` and `MISSING`.
 - `DataUrl` publishes English item names only. `SkinsLanguage` no longer does anything and the plugin warns
   at load if it is set to something other than `en`.
+- `pets` (`<DataUrl>/data/pets.json`) is **optional**. A CDN that has not published it yet does not stop the
+  plugin: it logs one line, uses its built-in list of the five `pet_definitions`, and asks again on the next load.
+
+## C4 stickers
+
+CS2 1.41.8.2 (22 Sep 2026) made the C4 sticker-capable. The C4 has no paint kits, so every C4 row is
+`weapon_paint_id = 0`, and the plugin used to drop paint-0 rows before it applied stickers or a charm. Now a paint-0
+row that carries a sticker, a charm or a name tag is applied on its own branch - for the C4 **and** for any gun
+saved as "Default". A paint-0 row with nothing on it is still ignored.
+
+- Row: `wp_player_skins(steamid, weapon_team 2 or 0, weapon_defindex 49, weapon_paint_id 0, weapon_sticker_0..4,
+  weapon_keychain)`.
+- All five slots are written on the C4. The model authors only four sticker homes, so the fifth borrows home 1
+  and is shifted onto the side of the bomb, the same way the fifth sticker works on the four-home guns. A site
+  writes slot 4 with 0 in the sticker's second field, like any other slot; the plugin does the shift.
+- The C4 always uses its one hd mesh. It is not added to the `!skins` menu (there is nothing to paint).
+- The bomb is handed out by the game with `GiveNamedItem`, which the plugin already hooks, so no extra setup.
+- When the bomb is planted, the planted bomb gets the same stickers if the game did not carry them over itself.
+  **Untested in game** - nobody has seen a stickered planted bomb yet.
+
+## Pets
+
+CS2 1.41.8.2 added chicken pets (item 4681). The plugin spawns its own `chicken` that follows the player, carrying
+the pet id, stage, seed and name, and a `<player>'s <name>` label. **This has not been run on a server yet** - it is
+built from the 1.41.8.2 schema and strings. Things to watch when testing:
+
+- whether the pet's colour and shape change with the seed (the client is expected to derive them from it). If not,
+  `pet_variant` still picks the colour;
+- whether it keeps following (the leader is re-asserted every second) and whether the model is right per stage;
+- eggs never leave the nest; a chick uses `models/chicken/chick.vmdl`, a pullet or hen its breed's model.
+
+Lifecycle: spawned the frame after the owner spawns, stays put when the owner dies, comes back on the owner's next
+spawn if it was killed, and is removed on team change, disconnect, map end and plugin unload. A player the game
+itself gave a pet (a chicken whose owner is them) gets no second one.
+
+Names: the game keeps one name per stage (chick, pullet, hen), but only the item's main custom name is sent to
+players, so that is where the label's name comes from at every stage. The plugin has one name per player (the current
+stage's) and writes it there, plus on that stage's own name field. The in-game rename box stops at 20 characters; the
+plugin accepts up to 32 (the column width), so a longer name typed on a website is not cut again.
+
+Commands (`CommandPet`, default `pet`):
+
+| Command | What it does |
+| --- | --- |
+| `!pet` | Menu: pick a pet and its stage, or None |
+| `!pet name <text>` | Name the pet (32 characters max, the column width; empty clears it) |
+| `!pet seed [number]` | A new random look, or a specific seed |
+| `!pet color <number\|random>` | Force a colour (material group index), or let the seed decide |
+| `!pet stage <chick\|pullet\|hen>` | Change the stage |
+| `!pet off` | No pet |
+
+Config (`Additional`): `PetsEnabled` (default `true`), `CommandPet` (default `["pet"]`), `PetPermission` (default
+`""` = everyone, e.g. `"@css/vip"` - also decides whether a player's pet is spawned at all),
+`PetTeamIntroExperimental` (default `false`, see [Team intro](#team-intro-experimental)).
+
+Table (created automatically):
+
+```sql
+CREATE TABLE IF NOT EXISTS `wp_player_pets` (
+  `steamid`     varchar(18)  NOT NULL PRIMARY KEY,  -- one pet per player, pets are "noteam"
+  `pet_id`      int          NOT NULL,              -- 1 egg, 2 chick, 3 catalana, 4 silkie, 5 polish
+  `pet_stage`   tinyint      NOT NULL DEFAULT 3,    -- 0 egg, 1 chick, 2 pullet, 3 hen
+  `pet_variant` int          NULL,                  -- material group index; NULL = let the seed decide
+  `pet_seed`    int unsigned NOT NULL DEFAULT 0,    -- "pet seed" attribute
+  `pet_name`    varchar(32)  NULL                   -- name tag
+);
+```
+
+The pet models are precached on map load, so a plugin loaded mid-map may show pets on the default chicken model until
+the next map.
+
+### Team intro (experimental)
+
+**Off by default, and untested in game.** With `PetTeamIntroExperimental: true` (and `PetsEnabled`), the plugin also
+puts each player's pet into the team intro, the line-up the camera sweeps over before the first round. CS2 1.41.8.2
+gave every intro spot a pet item next to the agent, gloves and weapon. When the intro starts, the plugin writes the
+player's pet into that item one frame later, the same way it fills the chicken's item. It checks again half a second
+later in case the game overwrote it.
+
+- Only pullets and hens. The game deploys pets from the pullet stage, so chicks and eggs are left out.
+- A pet the game put there itself (a player who really owns one) is left alone.
+- `!pet color` does not reach the intro. The intro pet's look comes from the seed only.
+- The intro only runs with `mp_team_intro_type` on (the default `auto` means: when `mp_halftime` is set), and only on
+  maps that have the intro spots and cameras. The official maps do; most workshop maps do not.
+- The end-of-match line-up is **not** covered. It reads the pet from the player's loadout, which a plugin cannot
+  reach without faking the loadout slot.
+
+Each intro logs one line with how many pets were written. If the game rewrites a pet item after the intro starts, that
+is logged once. Not known yet: whether the client draws a pet from a plugin-written item at all, whether it needs a real
+item id, and whether the server rewrites the item after the event. If nothing shows, turn the option off again.
 
 ## Plugin Configuration
 <details>

@@ -9,8 +9,8 @@ using Newtonsoft.Json.Linq;
 namespace WeaponPaints
 {
 	/// <summary>
-	/// Loads the item datasets (skins, gloves, agents, music kits, collectibles) the menus and the
-	/// weapon code read from.
+	/// Loads the item datasets (skins, gloves, agents, music kits, collectibles, and the optional pets) the
+	/// menus and the weapon code read from.
 	///
 	/// The datasets used to be shipped inside the plugin and read synchronously with File.ReadAllText
 	/// during Load(). They are now pulled from <see cref="WeaponPaintsConfig.DataUrl"/> on plugin load,
@@ -103,10 +103,22 @@ namespace WeaponPaints
 			[property: JsonProperty("lastModified")] string? LastModified,
 			[property: JsonProperty("fetchedAt")] DateTimeOffset FetchedAt);
 
+		/// <param name="Optional">
+		/// A dataset the plugin can run without. It never makes the plugin refuse to run and is not retried when it
+		/// has no source at all - pets.json, which a CDN older than the 1.41.8.2 export simply does not have, and
+		/// which Pets.cs covers with a built-in list.
+		/// </param>
+		/// <param name="RowsProperty">
+		/// When the payload is an object rather than an array, the property holding the rows. data/pets.json is
+		/// `{ petItemDefindex, attributes, stages, pets: [...] }`; everything else is a bare array. A bare array is
+		/// still accepted for these, so the plugin does not care which of the two a CDN publishes.
+		/// </param>
 		private sealed record Dataset(
 			string Name,
 			Action<List<JObject>> Apply,
-			Func<List<JObject>, List<JObject>>? Prepare = null);
+			Func<List<JObject>, List<JObject>>? Prepare = null,
+			bool Optional = false,
+			string? RowsProperty = null);
 
 		#region Reading a published skin row
 
@@ -153,14 +165,15 @@ namespace WeaponPaints
 		#endregion
 
 		// stickers and keychains are deliberately absent: the plugin reads those out of the
-		// wp_player_skins columns, it never needs the catalogues.
+		// wp_player_skins columns, it never needs the catalogues. pets is optional - see Dataset.
 		private static readonly Dataset[] Datasets =
 		[
 			new("skins", list => WeaponPaints.SkinsList = list, PrepareSkins),
 			new("gloves", list => WeaponPaints.GlovesList = list),
 			new("agents", list => WeaponPaints.AgentsList = list),
 			new("music", list => WeaponPaints.MusicList = list),
-			new("collectibles", list => WeaponPaints.PinsList = list)
+			new("collectibles", list => WeaponPaints.PinsList = list),
+			new("pets", list => WeaponPaints.PetsList = list, PreparePets, Optional: true, RowsProperty: "pets")
 		];
 
 		/// <summary>
@@ -264,6 +277,18 @@ namespace WeaponPaints
 						}
 
 						if (results[i] == Source.StaleCache) stale.Add(pending[i].Name);
+
+						// An optional dataset with nothing at all is most likely just not published yet (a 404),
+						// and the plugin has a fallback for it - say so once and stop asking until the next load.
+						if (pending[i].Optional && results[i] == Source.None)
+						{
+							logger.LogInformation(
+								"{Dataset} is not available from {BaseUrl} and there is no cached copy - carrying on " +
+								"without it (it is optional). It is fetched again on the next plugin load.",
+								pending[i].Name, baseUrl);
+							continue;
+						}
+
 						stillPending.Add(pending[i]);
 					}
 
@@ -272,7 +297,8 @@ namespace WeaponPaints
 					// once data is in memory a later failure just leaves the previous copy in place.
 					if (attempt == 0)
 					{
-						var nothing = pending.Where((_, i) => results[i] == Source.None).Select(d => d.Name).ToList();
+						var nothing = pending.Where((dataset, i) => results[i] == Source.None && !dataset.Optional)
+							.Select(d => d.Name).ToList();
 						if (nothing.Count > 0)
 						{
 							var reason =
@@ -440,6 +466,15 @@ namespace WeaponPaints
 						continue;
 					}
 
+					// An optional dataset the CDN has not published yet answers 404. That is expected, not a
+					// failure: without a cached copy, RunAsync logs the one "carrying on without it" line, so a
+					// warning here would only make an optional dataset look broken.
+					if (dataset.Optional && response.StatusCode == HttpStatusCode.NotFound)
+					{
+						logger.LogDebug("{Url} answered 404 - {Dataset} is not published there", url, dataset.Name);
+						break;
+					}
+
 					response.EnsureSuccessStatusCode();
 					var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
@@ -576,7 +611,14 @@ namespace WeaponPaints
 			List<JObject>? parsed;
 			try
 			{
-				parsed = JsonConvert.DeserializeObject<List<JObject>>(json);
+				parsed = dataset.RowsProperty is null
+					? JsonConvert.DeserializeObject<List<JObject>>(json)
+					: JToken.Parse(json) switch
+					{
+						JArray rows => rows.OfType<JObject>().ToList(),
+						JObject root when root[dataset.RowsProperty] is JArray rows => rows.OfType<JObject>().ToList(),
+						_ => null
+					};
 			}
 			catch (JsonException ex)
 			{
@@ -727,5 +769,38 @@ namespace WeaponPaints
 				.ThenBy(entry => SkinPaint(entry) ?? int.MaxValue)
 				.ToList();
 		}
+
+		#region Reading a published pet row
+
+		// data/pets.json rows (one per items_game pet_definitions entry), as the SkinHub exporter publishes them:
+		//   { id, name, displayName, locName, kind: "egg"|"chick"|"adult", breed, model, modelKey, glb, icon }
+		// Only id, displayName, kind, breed and model are read here. `model` is a VPK path the plugin hands to the
+		// game as a spawn keyvalue and a precache entry, so it is only accepted when it looks like one.
+
+		/// <summary>A published pet row as the plugin uses it, or null if the row is unusable.</summary>
+		internal static WeaponPaints.PetDefinition? ParsePet(JObject row)
+		{
+			if (row["id"]?.Type != JTokenType.Integer || row["id"]!.Value<int>() is not (> 0 and var id)) return null;
+
+			var model = row["model"]?.Type == JTokenType.String ? row["model"]!.Value<string>() : null;
+			if (model is null || !model.StartsWith("models/", StringComparison.Ordinal) ||
+			    !model.EndsWith(".vmdl", StringComparison.Ordinal) || model.Contains(".."))
+				return null;
+
+			var kind = row["kind"]?.Type == JTokenType.String ? row["kind"]!.Value<string>() : null;
+			if (kind is not ("egg" or "chick" or "adult")) return null;
+
+			var displayName = row["displayName"]?.Type == JTokenType.String ? row["displayName"]!.Value<string>() : null;
+			var breed = row["breed"]?.Type == JTokenType.String ? row["breed"]!.Value<string>() : null;
+
+			return new WeaponPaints.PetDefinition(id, string.IsNullOrWhiteSpace(displayName) ? $"Pet {id}" : displayName,
+				kind, breed, model);
+		}
+
+		#endregion
+
+		/// <summary>Keeps the pet rows the plugin can use. An empty result makes the payload count as unusable.</summary>
+		private static List<JObject> PreparePets(List<JObject> source) =>
+			source.Where(row => ParsePet(row) is not null).ToList();
 	}
 }

@@ -98,6 +98,12 @@ public partial class WeaponPaints
 				player!.Print(Localizer["wp_info_pin"]);
 			}
 
+		if (Config.Additional.PetsEnabled)
+			if (!string.IsNullOrEmpty(Localizer["wp_info_pet"]))
+			{
+				player!.Print(Localizer["wp_info_pet"]);
+			}
+
 		if (!Config.Additional.KnifeEnabled) return;
 		if (!string.IsNullOrEmpty(Localizer["wp_info_knife"]))
 		{

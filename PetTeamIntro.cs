@@ -35,8 +35,11 @@ namespace WeaponPaints;
  *   - The spots are reused from intro to intro, and the game may leave m_petItem alone for a player with no pet. So an
  *     item this plugin wrote earlier is cleared again when the player now on that spot has no plugin pet, and on
  *     plugin unload. The bookkeeping (spot handle -> item id written) is dropped at map end, with the spots.
- *   - pet_variant cannot reach the intro: the chicken's colour is forced with its "Skin" input, and the intro pet is an
- *     entity the client spawns on its own. The look there comes from the seed alone.
+ *   - pet_variant cannot reach the intro. The client colours the intro pet from the item's style (client.dll 2000917
+ *     0x180d4ad5b), and the server has no way to send one: the style override is a client-only field and a plugin
+ *     item has no GC inventory entry. So the intro pet always has its model's default colour. The seed and the stage
+ *     do reach it - the client copies the whole item into the pet (0x180d4acba) - so its body shape and colour
+ *     jitter come from the seed, as on the chicken.
  *
  * NONE OF THIS HAS BEEN SEEN RUNNING. Unknown until a server test: whether the client draws a pet for a plugin-filled
  * item at all, whether it wants a real (GC-issued) item id, whether it shows below the pullet stage, and whether the

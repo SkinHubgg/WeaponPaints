@@ -92,7 +92,7 @@ namespace WeaponPaints
 					        `steamid` varchar(18) NOT NULL PRIMARY KEY,
 					        `pet_id` int NOT NULL COMMENT 'pet_definitions id: 1 egg, 2 chick, 3 catalana, 4 silkie, 5 polish',
 					        `pet_stage` tinyint NOT NULL DEFAULT 3 COMMENT 'upgrade level: 0 egg, 1 chick, 2 pullet, 3 hen',
-					        `pet_variant` int NULL DEFAULT NULL COMMENT 'material group index; NULL = let the seed decide',
+					        `pet_variant` int NULL DEFAULT NULL COMMENT 'item style = material group index; NULL = no style, the default group',
 					        `pet_seed` int unsigned NOT NULL DEFAULT 0 COMMENT 'pet seed attribute',
 					        `pet_name` varchar(32) NULL DEFAULT NULL COMMENT 'name tag for the current stage'
 					    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;"

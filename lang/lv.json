@@ -41,11 +41,11 @@
 	"wp_pet_name_cleared": "Jūsu mājdzīvniekam vairs nav vārda",
 	"wp_pet_seed_set": "Jūsu mājdzīvnieka izskata sēkla tagad ir {lime}{0}{default}",
 	"wp_pet_variant_set": "Jūsu mājdzīvnieka krāsa tagad ir {lime}#{0}{default}",
-	"wp_pet_variant_cleared": "Jūsu mājdzīvnieka krāsu tagad nosaka tā sēkla",
+	"wp_pet_variant_cleared": "Jūsu mājdzīvnieka krāsa tagad ir noklusējuma krāsa",
 	"wp_pet_none": "Jums vēl nav mājdzīvnieka. Ievadiet {lime}!pet{default}, lai to izvēlētos",
 	"wp_pet_invalid": "{lightred}Šī vērtība nav derīga",
 	"wp_pet_no_permission": "{lightred}Jums nav piekļuves mājdzīvniekiem",
-	"wp_pet_usage": "{lime}!pet{default} izvēlne, {lime}!pet name <vārds>{default}, {lime}!pet seed [skaitlis]{default}, {lime}!pet color <skaitlis|random>{default}, {lime}!pet stage <chick|pullet|hen>{default}, {lime}!pet off{default}",
+	"wp_pet_usage": "{lime}!pet{default} izvēlne, {lime}!pet name <vārds>{default}, {lime}!pet seed [skaitlis]{default}, {lime}!pet color <skaitlis|random|default>{default}, {lime}!pet stage <chick|pullet|hen>{default}, {lime}!pet off{default}",
 
 	"None": "Nav"
 }

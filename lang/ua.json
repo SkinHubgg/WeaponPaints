@@ -41,11 +41,11 @@
 	"wp_pet_name_cleared": "У вашого улюбленця більше немає імені",
 	"wp_pet_seed_set": "Сід вигляду вашого улюбленця тепер {lime}{0}{default}",
 	"wp_pet_variant_set": "Колір вашого улюбленця тепер {lime}#{0}{default}",
-	"wp_pet_variant_cleared": "Колір вашого улюбленця тепер залежить від сіду",
+	"wp_pet_variant_cleared": "Колір вашого улюбленця тепер стандартний",
 	"wp_pet_none": "У вас ще немає улюбленця. Введіть {lime}!pet{default}, щоб обрати",
 	"wp_pet_invalid": "{lightred}Неприпустиме значення",
 	"wp_pet_no_permission": "{lightred}У вас немає доступу до улюбленців",
-	"wp_pet_usage": "{lime}!pet{default} меню, {lime}!pet name <ім'я>{default}, {lime}!pet seed [число]{default}, {lime}!pet color <число|random>{default}, {lime}!pet stage <chick|pullet|hen>{default}, {lime}!pet off{default}",
+	"wp_pet_usage": "{lime}!pet{default} меню, {lime}!pet name <ім'я>{default}, {lime}!pet seed [число]{default}, {lime}!pet color <число|random|default>{default}, {lime}!pet stage <chick|pullet|hen>{default}, {lime}!pet off{default}",
 
 	"None": "Немає"
 }

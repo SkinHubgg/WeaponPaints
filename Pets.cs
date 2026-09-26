@@ -25,10 +25,13 @@ public class PetInfo
 	/// <summary>The "upgrade level" attribute: 0 egg, 1 chick, 2 pullet, 3 hen.</summary>
 	public int Stage { get; set; } = WeaponPaints.PetStageHen;
 
-	/// <summary>Material group index forced with the "Skin" input; null lets the seed decide.</summary>
+	/// <summary>
+	/// The item's style: the material group (colour) the chicken is drawn with, by index. Null is "no style", which
+	/// draws the model's default group, like a real pet without one. The seed never picks the colour.
+	/// </summary>
 	public int? Variant { get; set; }
 
-	/// <summary>The "pet seed" attribute.</summary>
+	/// <summary>The "pet seed" attribute: body shape and colour jitter, rolled by the client.</summary>
 	public uint Seed { get; set; }
 
 	/// <summary>Name tag for the current stage, or null.</summary>
@@ -46,15 +49,33 @@ public class PetInfo
  *
  * This is "approach B" from the SkinHub research: rather than faking loadout slot 57 and hoping the game's own
  * deploy code runs on a community server (unknown, and it would need reverse engineering of libserver), the plugin
- * creates the chicken itself and fills in the same item the game would. Everything below is written against the
- * schema and strings of 1.41.8.2; NONE OF IT HAS BEEN SEEN RUNNING ON A SERVER YET. In particular:
+ * creates the chicken itself and fills in the same item the game would. It is written against the 1.41.8.2 schema and
+ * checked against the code of client.dll / server.dll 2000917 (1.41.8.4, addresses below are from that build unless
+ * marked 2000918), then again on 2000918 (1.41.8.5), whose pet code is the same at shifted addresses; NONE OF IT HAS
+ * BEEN SEEN RUNNING ON A SERVER YET. What that code does with a pet:
  *
- *   - whether the client derives the look (colour group, hue jitter, body shape) from the networked "pet seed" is
- *     inferred from strings in client.dll, not proven. If it does not, `pet_variant` still picks the colour group
- *     through the "Skin" input, and the rest is the model's default look;
- *   - the server reads "pet id", "pet seed" and "upgrade level" itself and has the model paths hardcoded, so it may
- *     pick the model on its own and override `chicken_model`. That is why the attributes are written BEFORE
- *     DispatchSpawn and why the model is checked (and set) once more after it;
+ *   - the colour is a material group the SERVER sets, never the seed. The game's own deploy stores the item's style
+ *     (or -1 without one) in a pending-skin field that CChicken::Spawn applies by index (0x18034b25d). A chicken with
+ *     no pending skin gets a random group from the engine's global RNG instead, a new colour on every spawn. That
+ *     field is not in the schema, so the plugin sets the same index with the "Skin" input straight after spawning -
+ *     on every spawn, "0" (the default group) when the player has no colour. pet_variant is the style. "Skin" is
+ *     CBaseModelEntity_API::Skin (server 2000918 0x180b22d90), the same SetMaterialGroupByIndex Spawn uses: the index
+ *     is looked up in the chicken's CURRENT model (hence after the model is set), -1 or past the end gives token 0 (no
+ *     group, which draws the model's own default materials), and the token goes into the networked
+ *     CSkeletonInstance::m_materialGroup. Writing +0x11BC, MaterialGroup.Value or a "skin" keyvalue instead would be
+ *     worse: an unschematised offset, a write past the network notifier, and a value Spawn overwrites. The item's own
+ *     style cannot carry it: the server's CEconItemView has no style field, and the client reads the style only in
+ *     preview code (see PetTeamIntro.cs);
+ *   - the seed and the stage are read by the CLIENT from the networked item, and only when m_bInitialized is set: the
+ *     seed rolls the body shape (pullet and hen) and the colour jitter (hue, saturation, brightness...), the stage
+ *     picks the shape preset. The in-world chicken builds that look in C_Chicken::Activate, once per entity, from the
+ *     networked item (client 2000918 0x180d400a4), and never rebuilds it - one more reason any change of look
+ *     respawns the pet. Seed 0 skips the jitter (client 0x180d42dee), so the plugin never picks it,
+ *     and stage 4 makes the client read an uninitialised preset name (0x180d4a69d), so the stage is clamped to 0..3;
+ *   - the server reads "upgrade level" once, in Spawn, for the pet's scale (0x18034aeb7). So the item is filled BEFORE
+ *     DispatchSpawn, and any change of look respawns the pet. Spawn also always loads chicken.vmdl - only the game's
+ *     own deploy can name another model, `chicken_model` cannot (0x18034ae3b) - and clears m_leader (0x18034b37d), so
+ *     the model and the leader are set after it;
  *   - m_owner and m_szCustomNameOverride2/3 are not in the CounterStrikeSharp.API 1.0.367 bindings this plugin builds
  *     against. They are written through the schema by name, which resolves against the running server, and skipped
  *     (with one log line) if the server does not have them;
@@ -67,8 +88,9 @@ public class PetInfo
  * (PetTeamIntroExperimental).
  *
  * Lifecycle: a pet is spawned the frame after its owner spawns (and when their row arrives from the database while
- * they are alive), follows them, stays where it is when they die, comes back on their next spawn if it was killed or
- * a round restart cleaned it up, and is removed on team change, disconnect, map end and plugin unload. Eggs never
+ * they are alive), follows them, stays where it is when they die, comes back on their next spawn if it was killed,
+ * comes back a frame after round_start when the game's chicken manager removed it (see OnRoundStartPets), and is
+ * removed on team change, disconnect, map end and plugin unload. Eggs never
  * leave the nest. A player the game itself gave a pet (a chicken whose m_owner is them - real pullets can deploy
  * from about 2026-10-06) gets no second one from here.
  *
@@ -112,6 +134,13 @@ public partial class WeaponPaints
 
 	private const uint InvalidEntityHandle = 0xFFFFFFFF;
 
+	/// <summary>
+	/// CEntityIdentity m_flags bit for an entity whose removal is queued (EF_MARKED_FOR_DELETE in Valve's hl2sdk). The
+	/// game's chicken manager treats a pet with it set as gone (server 2000918 0x180348ff2..0x180348ffe). Read through
+	/// the schema field by name, not an offset.
+	/// </summary>
+	private const uint EntityMarkedForDeleteFlag = 0x200;
+
 	/// <summary>A pet_definitions entry as the plugin uses it. Kind is "egg", "chick" or "adult".</summary>
 	internal sealed record PetDefinition(int Id, string DisplayName, string Kind, string? Breed, string Model);
 
@@ -129,6 +158,37 @@ public partial class WeaponPaints
 		new(5, "Polish Chicken", "adult", "polish", "models/chicken/chicken_polish.vmdl")
 	];
 
+	/// <summary>A pet model's colours: how many material groups it has, and the weights a new pet's colour is rolled with.</summary>
+	private sealed record PetModelColours(int GroupCount, (int Group, int Weight)[] RollWeights);
+
+	/// <summary>
+	/// The material groups of each pet model in CS2 1.41.8.4. Index 0 is "default" and index N is named "N", so a style
+	/// is a group index. The weights are the model's chicken_metadata `matgrps` "freq" values. Neither client.dll nor
+	/// server.dll reads them, so presumably the GC rolls a new pet's style with them - the plugin does the same. A group
+	/// without a weight is never rolled but can still be picked with !pet color. The chick and the egg have no groups.
+	/// Changes only with a game update, like BuiltInPets. A model missing here (a new breed from pets.json) is drawn
+	/// with the stored index as it is, and the game draws its default group for an index it does not have.
+	/// </summary>
+	private static readonly Dictionary<string, PetModelColours> PetColours = new(StringComparer.OrdinalIgnoreCase)
+	{
+		["models/chicken/chicken.vmdl"] = new(14,
+			[(1, 4), (2, 1), (3, 3), (4, 1), (5, 1), (6, 2), (8, 3), (9, 2), (10, 1), (11, 1)]),
+		["models/chicken/chicken_silkie.vmdl"] = new(10, [(1, 4), (2, 3), (4, 2), (5, 2), (7, 3)]),
+		["models/chicken/chicken_polish.vmdl"] = new(13, [(1, 1), (2, 2), (3, 1), (4, 1), (5, 2), (9, 3)]),
+		["models/chicken/chick.vmdl"] = new(0, []),
+		["models/chicken/egg_pristine.vmdl"] = new(0, [])
+	};
+
+	/// <summary>The highest colour index accepted for a model the plugin has no group count for.</summary>
+	private const int PetMaxUnknownGroup = 63;
+
+	/// <summary>
+	/// The highest "pet seed" the plugin picks. The client's generator gives a seed s and 2^32 - s the same look, and
+	/// 0x7FFFFFFF starts with a zero draw, so 1..0x7FFFFFFE holds every usable look exactly once. Stored and typed seeds
+	/// above it stay valid.
+	/// </summary>
+	private const uint PetMaxRandomSeed = 0x7FFFFFFE;
+
 	internal static List<JObject> PetsList = [];
 	internal static readonly ConcurrentDictionary<int, PetInfo> GPlayersPet = new();
 
@@ -138,8 +198,11 @@ public partial class WeaponPaints
 	/// </summary>
 	private static readonly ConcurrentDictionary<int, byte> PetSpawnQueue = new();
 
-	/// <summary>What a spawned pet looks like. Equal looks mean the live chicken can be kept as it is.</summary>
-	private sealed record PetLook(int PetId, int Stage, int? Variant, uint Seed, string? Name, string Model);
+	/// <summary>
+	/// What a spawned pet looks like. Equal looks mean the live chicken can be kept as it is. Group is the material group
+	/// index sent with "Skin" (see PetGroupFor), not the stored style.
+	/// </summary>
+	private sealed record PetLook(int PetId, int Stage, int Group, uint Seed, string? Name, string Model);
 
 	/// <summary>
 	/// A chicken this plugin spawned. It is found again by its raw entity handle (index plus serial number), so an
@@ -154,6 +217,7 @@ public partial class WeaponPaints
 	private static readonly ConcurrentDictionary<string, short> PetSchemaOffsets = new();
 	private static int _petOwnerMissingLogged;
 	private static int _petItemRewriteLogged;
+	private static int _petMaterialGroupLogged;
 	private static bool? _petLeaderNetworked;
 	private int _petThinkTicks;
 
@@ -202,7 +266,50 @@ public partial class WeaponPaints
 			? PetDefinitions().FirstOrDefault(definition => definition.Kind == "chick")?.Model ?? "models/chicken/chick.vmdl"
 			: pet.Model;
 
-		return new PetLook(pet.Id, stage, info.Variant, info.Seed, SanitizePetName(info.Name), model);
+		return new PetLook(pet.Id, stage, PetGroupFor(model, info.Variant), info.Seed, SanitizePetName(info.Name), model);
+	}
+
+	/// <summary>
+	/// The material group a pet is drawn with: its style when that is a group of the model it is drawn with, and 0, the
+	/// model's "default" group, otherwise - no style, a chick (no groups), or an index past the end. That is the game's
+	/// own rule for an index (server 0x1814a0020 draws the default group for anything outside 0..count-1) and the
+	/// website viewer's; sending 0 rather than the stray index just keeps it an actual group. A model without a known
+	/// group count gets the stored index and the game's rule.
+	/// </summary>
+	private static int PetGroupFor(string model, int? style)
+	{
+		if (style is not { } group || group < 0) return 0;
+		if (!PetColours.TryGetValue(model, out var colours)) return group;
+		return group < colours.GroupCount ? group : 0;
+	}
+
+	/// <summary>
+	/// Whether !pet color takes this index for this pet: 0 (the default group) always, past it only the pet's own groups
+	/// - the game draws an index past the end as the default without a word. With no known group count (or no known
+	/// pet), up to PetMaxUnknownGroup, a generous ceiling that still refuses nonsense.
+	/// </summary>
+	private static bool PetVariantAllowed(PetDefinition? pet, int variant) =>
+		variant == 0 || (variant > 0 &&
+		                 variant < (pet != null && PetColours.TryGetValue(pet.Model, out var colours)
+			                 ? colours.GroupCount
+			                 : PetMaxUnknownGroup + 1));
+
+	/// <summary>
+	/// A colour for a new pet, rolled with the model's weights (see PetColours), or null (the default group) when the
+	/// model has no weighted groups.
+	/// </summary>
+	private static int? RandomPetVariant(PetDefinition pet)
+	{
+		if (!PetColours.TryGetValue(pet.Model, out var colours) || colours.RollWeights.Length == 0) return null;
+
+		var roll = Random.Shared.Next(colours.RollWeights.Sum(entry => entry.Weight));
+		foreach (var (group, weight) in colours.RollWeights)
+		{
+			if (roll < weight) return group;
+			roll -= weight;
+		}
+
+		return null;
 	}
 
 	internal static string? SanitizePetName(string? name)
@@ -231,7 +338,8 @@ public partial class WeaponPaints
 		return clean.Length == 0 ? null : clean;
 	}
 
-	private static uint RandomPetSeed() => (uint)Random.Shared.NextInt64(1, (long)uint.MaxValue + 1);
+	/// <summary>A seed in 1..PetMaxRandomSeed. Never 0: seed 0 skips the colour jitter altogether.</summary>
+	private static uint RandomPetSeed() => (uint)Random.Shared.NextInt64(1, (long)PetMaxRandomSeed + 1);
 
 	private bool PlayerMayUsePets(CCSPlayerController player) =>
 		string.IsNullOrWhiteSpace(Config.Additional.PetPermission) ||
@@ -244,6 +352,7 @@ public partial class WeaponPaints
 		if (!Config.Additional.PetsEnabled) return;
 
 		RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawnPet);
+		RegisterEventHandler<EventRoundStart>(OnRoundStartPets);
 		RegisterEventHandler<EventPlayerTeam>(OnPlayerTeamPet);
 		RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnectPet);
 		RegisterListener<Listeners.OnMapEnd>(OnMapEndPets);
@@ -283,6 +392,32 @@ public partial class WeaponPaints
 
 			PetSpawnQueue.TryRemove(slot, out _);
 			SpawnPlayerPet(current);
+		});
+
+		return HookResult.Continue;
+	}
+
+	/// <summary>
+	/// round_start: the game's chicken manager (CCSChickenManager, server 2000918 fn_348db0, 0x180348e40..0x180348f22)
+	/// removes every chicken whose m_owner is a player unless it is that player's own game pet (the controller's pet
+	/// handle and the loadout slot 57 item id), which ours never is. The map clean-up just before keeps chickens (they
+	/// are on its preserve list), so a pet that lived through the restart is removed here, possibly after its owner's
+	/// spawn already kept it. One frame later, once that removal has gone through, every owner who is alive gets their
+	/// pet back; a pet still standing is only brought to its owner. On a map without a nav mesh the manager does
+	/// nothing and this only re-checks.
+	/// </summary>
+	private HookResult OnRoundStartPets(EventRoundStart @event, GameEventInfo info)
+	{
+		Server.NextFrame(() =>
+		{
+			foreach (var slot in GPlayersPet.Keys)
+			{
+				var player = Utilities.GetPlayerFromSlot(slot);
+				if (player == null || !player.IsValid || !player.PawnIsAlive) continue;
+
+				PetSpawnQueue.TryRemove(slot, out _);
+				SpawnPlayerPet(player);
+			}
 		});
 
 		return HookResult.Continue;
@@ -481,8 +616,8 @@ public partial class WeaponPaints
 
 		try
 		{
-			// The item first, and all of it before DispatchSpawn: the server reads the pet attributes itself, most
-			// likely while spawning (see the header).
+			// The item first, and all of it before DispatchSpawn: Spawn reads "upgrade level" once, for the pet's
+			// scale (see the header).
 			var item = chicken.AttributeManager.Item;
 			FillPetItem(item, player.SteamID, look);
 
@@ -490,15 +625,20 @@ public partial class WeaponPaints
 			WritePetOwner(chicken, ownerHandle, false);
 			chicken.Leader.Raw = player.PlayerPawn.Raw;
 
+			// No `chicken_model`: it does not choose the model (Spawn loads chicken.vmdl either way) and only widens
+			// Spawn's random colour roll, which the "Skin" input below replaces.
 			var keyValues = new CEntityKeyValues();
-			keyValues.SetString("chicken_model", look.Model);
 			keyValues.SetVector("origin", position.X, position.Y, position.Z);
 			keyValues.SetAngle("angles", angles.X, angles.Y, angles.Z);
 			chicken.DispatchSpawn(keyValues);
 
-			// Spawn may have reset any of these, and the model may have been picked by the server's own pet code.
+			// Spawn loaded chicken.vmdl and cleared the leader. The model goes first: the colour is an index into the
+			// model's own groups. Then the colour, on every spawn - the pet's style, or 0 (the "default" group). A real
+			// pet without a style gets -1 there, token 0, which the client draws with the same default materials.
+			// Without it the chicken keeps the random group Spawn rolled.
 			EnsurePetModel(chicken, look.Model);
-			if (look.Variant is { } variant) chicken.AcceptInput("Skin", value: variant.ToString(CultureInfo.InvariantCulture));
+			chicken.AcceptInput("Skin", value: look.Group.ToString(CultureInfo.InvariantCulture));
+			LogPetMaterialGroupOnce(chicken, look);
 			WritePetOwner(chicken, ownerHandle, true);
 			AssertPetLeader(chicken, player);
 			chicken.Teleport(position, angles, Vector3.Zero);
@@ -510,6 +650,34 @@ public partial class WeaponPaints
 			Logger.LogWarning("Could not spawn the pet for {Player}: {Reason}", player.PlayerName, ex.Message);
 			KillPetEntity(chicken);
 		}
+	}
+
+	/// <summary>
+	/// Diagnostic only, for the first server test: the colour token the "Skin" input left in the networked
+	/// CSkeletonInstance::m_materialGroup, logged once, a frame later. The README lists the token of every group; 0
+	/// means the index was past the end of the model's groups, or the model was not set yet.
+	/// </summary>
+	private void LogPetMaterialGroupOnce(CChicken chicken, PetLook look)
+	{
+		if (Interlocked.Exchange(ref _petMaterialGroupLogged, 1) != 0) return;
+
+		Server.NextFrame(() =>
+		{
+			try
+			{
+				if (!chicken.IsValid) return;
+				var skeleton = chicken.CBodyComponent?.SceneNode?.GetSkeletonInstance();
+				if (skeleton == null) return;
+
+				Logger.LogInformation(
+					"Pet colour check: \"Skin\" {Group} on {Model} left m_materialGroup = 0x{Token:x8}",
+					look.Group, look.Model, skeleton.MaterialGroup.Value);
+			}
+			catch (Exception ex)
+			{
+				Logger.LogInformation("Pet colour check skipped: {Reason}", ex.Message);
+			}
+		});
 	}
 
 	private void RemovePlayerPet(int slot)
@@ -545,6 +713,11 @@ public partial class WeaponPaints
 		// CHandle.Get compares the whole handle, serial number included, so a reused index resolves to null.
 		var chicken = new CHandle<CChicken>(active.Handle).Value;
 		if (chicken == null || !chicken.IsValid || chicken.DesignerName != "chicken") return null;
+
+		// Queued for removal (the game's round_start pass, a Kill input): the handle resolves until the removal goes
+		// through, and a pet kept now would vanish a moment later. Treated as gone, so it is replaced.
+		var identity = chicken.Entity;
+		if (identity != null && (identity.Flags & EntityMarkedForDeleteFlag) != 0) return null;
 
 		// Diagnostic only, for the first server test: says whether the game rewrites the pet item after spawn.
 		var itemId = chicken.AttributeManager.Item.ItemID;
@@ -739,8 +912,8 @@ public partial class WeaponPaints
 	/// <summary>
 	/// !pet opens the menu. The rest are chat subcommands, because a name and a seed are typed, not picked:
 	///   !pet name &lt;text&gt;      - name the pet (empty clears it)
-	///   !pet seed [number]      - a new random look, or a specific seed
-	///   !pet color &lt;n|random&gt;  - force a colour (material group) or let the seed pick
+	///   !pet seed [number]      - a new random seed (body shape, colour jitter), or a specific one
+	///   !pet color &lt;n|random|default&gt; - pick a colour (material group), roll one, or go back to the default
 	///   !pet stage &lt;stage&gt;     - chick / pullet / hen
 	///   !pet off                - no pet
 	/// </summary>
@@ -834,7 +1007,7 @@ public partial class WeaponPaints
 		}
 
 		if (GPlayersPet.ContainsKey(slot))
-			menu.AddMenuOption(Localizer["wp_pet_menu_random_look"], (p, _) => SetPetSeed(p, ""));
+			menu.AddMenuOption(Localizer["wp_pet_menu_random_look"], (p, _) => RandomizePetLook(p));
 
 		menu.Open(player);
 	}
@@ -873,9 +1046,11 @@ public partial class WeaponPaints
 			{
 				PetId = pet.Id,
 				Stage = stage,
-				// The same pet keeps its seed and colour, so changing the stage does not change the look.
+				// The same pet keeps its seed and colour, so changing the stage does not change the look. Another pet
+				// gets both new, the way a new pet comes with its own seed and style. The colour is not carried
+				// over: it is an index into one model's own groups.
 				Seed = samePet ? current!.Seed : RandomPetSeed(),
-				Variant = samePet ? current!.Variant : null,
+				Variant = samePet ? current!.Variant : RandomPetVariant(pet),
 				Name = current?.Name
 			};
 
@@ -921,7 +1096,8 @@ public partial class WeaponPaints
 		uint seed;
 		if (string.IsNullOrWhiteSpace(argument) || argument.Equals("random", StringComparison.OrdinalIgnoreCase))
 			seed = RandomPetSeed();
-		else if (!uint.TryParse(argument.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out seed))
+		// 0 is refused: it is the one seed that skips the colour jitter (see the header).
+		else if (!uint.TryParse(argument.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out seed) || seed == 0)
 		{
 			PrintPet(player, "wp_pet_invalid");
 			return;
@@ -929,6 +1105,31 @@ public partial class WeaponPaints
 
 		pet.Seed = seed;
 		PrintPet(player, "wp_pet_seed_set", seed.ToString(CultureInfo.InvariantCulture));
+
+		SavePet(player, pet);
+		ShowPetChange(player);
+	}
+
+	/// <summary>
+	/// The menu's "New random look": a new seed and, when the pet has colours to roll, a new colour - the look of a new
+	/// pet of the same kind. The seed alone no longer changes the colour.
+	/// </summary>
+	private void RandomizePetLook(CCSPlayerController player)
+	{
+		if (!GPlayersPet.TryGetValue(player.Slot, out var pet))
+		{
+			PrintPet(player, "wp_pet_none");
+			return;
+		}
+
+		pet.Seed = RandomPetSeed();
+		PrintPet(player, "wp_pet_seed_set", pet.Seed.ToString(CultureInfo.InvariantCulture));
+
+		if (FindPet(pet.PetId) is { } definition && RandomPetVariant(definition) is { } variant)
+		{
+			pet.Variant = variant;
+			PrintPet(player, "wp_pet_variant_set", variant.ToString(CultureInfo.InvariantCulture));
+		}
 
 		SavePet(player, pet);
 		ShowPetChange(player);
@@ -943,14 +1144,20 @@ public partial class WeaponPaints
 		}
 
 		var value = argument.Trim().ToLowerInvariant();
+		var definition = FindPet(pet.PetId);
 
-		if (value is "" or "random" or "auto" or "seed")
+		if (value is "" or "default" or "none")
 		{
 			pet.Variant = null;
 			PrintPet(player, "wp_pet_variant_cleared");
 		}
-		// The breeds have 9 to 13 colour groups; 63 is a generous ceiling that still refuses nonsense.
-		else if (int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var variant) && variant <= 63)
+		else if (value == "random" && definition != null && RandomPetVariant(definition) is { } rolled)
+		{
+			pet.Variant = rolled;
+			PrintPet(player, "wp_pet_variant_set", rolled.ToString(CultureInfo.InvariantCulture));
+		}
+		else if (int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var variant) &&
+		         PetVariantAllowed(definition, variant))
 		{
 			pet.Variant = variant;
 			PrintPet(player, "wp_pet_variant_set", variant.ToString(CultureInfo.InvariantCulture));

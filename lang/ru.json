@@ -41,11 +41,11 @@
 	"wp_pet_name_cleared": "У вашего питомца больше нет имени",
 	"wp_pet_seed_set": "Сид облика вашего питомца теперь {lime}{0}{default}",
 	"wp_pet_variant_set": "Цвет вашего питомца теперь {lime}#{0}{default}",
-	"wp_pet_variant_cleared": "Цвет вашего питомца теперь зависит от сида",
+	"wp_pet_variant_cleared": "Цвет вашего питомца теперь стандартный",
 	"wp_pet_none": "У вас ещё нет питомца. Введите {lime}!pet{default}, чтобы выбрать",
 	"wp_pet_invalid": "{lightred}Недопустимое значение",
 	"wp_pet_no_permission": "{lightred}У вас нет доступа к питомцам",
-	"wp_pet_usage": "{lime}!pet{default} меню, {lime}!pet name <имя>{default}, {lime}!pet seed [число]{default}, {lime}!pet color <число|random>{default}, {lime}!pet stage <chick|pullet|hen>{default}, {lime}!pet off{default}",
+	"wp_pet_usage": "{lime}!pet{default} меню, {lime}!pet name <имя>{default}, {lime}!pet seed [число]{default}, {lime}!pet color <число|random|default>{default}, {lime}!pet stage <chick|pullet|hen>{default}, {lime}!pet off{default}",
 
 	"None": "Нет"
 }

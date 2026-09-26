@@ -106,16 +106,39 @@ saved as "Default". A paint-0 row with nothing on it is still ignored.
 
 CS2 1.41.8.2 added chicken pets (item 4681). The plugin spawns its own `chicken` that follows the player, carrying
 the pet id, stage, seed and name, and a `<player>'s <name>` label. **This has not been run on a server yet** - it is
-built from the 1.41.8.2 schema and strings. Things to watch when testing:
+built from the 1.41.8.2 schema and checked against the 1.41.8.4 and 1.41.8.5 game code.
 
-- whether the pet's colour and shape change with the seed (the client is expected to derive them from it). If not,
-  `pet_variant` still picks the colour;
+How the look is set, the same way the game sets it for a real pet:
+
+- **Colour** is the item's style, `pet_variant`: a material group index (Catalana 0-13, Silkie 0-9, Polish 0-12; 0 is
+  the default colour, the chick has none). The server sets it, so the plugin sends it to the chicken on every spawn.
+  No colour (`NULL`) or an index the model does not have means the default colour. The seed never picks the colour.
+  Without this the game rolls a new random colour every time the chicken spawns. A pet picked in the `!pet` menu
+  gets a colour rolled with the weights the game's model files carry for this; `!pet color` changes it. It is sent
+  with the game's own `Skin` input, which does what the game's pet spawn does (read in the 1.41.8.5 server): it looks
+  the index up in the chicken's current model and writes the networked colour field.
+- **Seed** (`pet_seed`) drives the body shape of a pullet or hen and a small colour jitter (hue, brightness and so on).
+  The client rolls both from the item. New seeds are picked from 1 to 2147483646, where every value is a different
+  look. Seed 0 is refused because it switches the jitter off.
+- **Stage** (`pet_stage`) is clamped to 0-3. The pet's size is set once when it spawns, so any change respawns it.
+
+Things to watch when testing:
+
+- whether the pet's shape and colour jitter match the website's viewer for the same seed (the viewer's roll now
+  matches the game code bit for bit, and the chicken that follows you builds its look from the item once, when it
+  spawns);
+- the one `Pet colour check` line in the server log: `m_materialGroup` should be the group's token - default
+  `0x75de364e`, 1 `0x257bb367`, 2 `0x505179cd`, 3 `0xda411775`, 4 `0xdf125af1`, 5 `0x98eacc60`, 6 `0xd5d9acb3`,
+  7 `0x85ad0a57`, 8 `0xc6c35f5a`, 9 `0x936b824e`, 10 `0xb13d1d67`, 11 `0x9913e8e1`, 12 `0xb018be21`, 13 `0xdae98fdb`.
+  `0` means the index was past the end of the model's groups;
 - whether it keeps following (the leader is re-asserted every second) and whether the model is right per stage;
 - eggs never leave the nest; a chick uses `models/chicken/chick.vmdl`, a pullet or hen its breed's model.
 
 Lifecycle: spawned the frame after the owner spawns, stays put when the owner dies, comes back on the owner's next
 spawn if it was killed, and is removed on team change, disconnect, map end and plugin unload. A player the game
-itself gave a pet (a chicken whose owner is them) gets no second one.
+itself gave a pet (a chicken whose owner is them) gets no second one. At every round start the game removes each
+chicken that has an owner but is not that owner's real pet, which includes the plugin's; the plugin puts every living
+owner's pet back one frame later.
 
 Names: the game keeps one name per stage (chick, pullet, hen), but only the item's main custom name is sent to
 players, so that is where the label's name comes from at every stage. The plugin has one name per player (the current
@@ -126,10 +149,10 @@ Commands (`CommandPet`, default `pet`):
 
 | Command | What it does |
 | --- | --- |
-| `!pet` | Menu: pick a pet and its stage, or None |
+| `!pet` | Menu: pick a pet and its stage, or None. "New random look" rolls a new seed and colour |
 | `!pet name <text>` | Name the pet (32 characters max, the column width; empty clears it) |
-| `!pet seed [number]` | A new random look, or a specific seed |
-| `!pet color <number\|random>` | Force a colour (material group index), or let the seed decide |
+| `!pet seed [number]` | A new random seed (shape and colour jitter), or a specific one (not 0) |
+| `!pet color <number\|random\|default>` | Pick a colour (material group index), roll one, or go back to the default |
 | `!pet stage <chick\|pullet\|hen>` | Change the stage |
 | `!pet off` | No pet |
 
@@ -144,7 +167,7 @@ CREATE TABLE IF NOT EXISTS `wp_player_pets` (
   `steamid`     varchar(18)  NOT NULL PRIMARY KEY,  -- one pet per player, pets are "noteam"
   `pet_id`      int          NOT NULL,              -- 1 egg, 2 chick, 3 catalana, 4 silkie, 5 polish
   `pet_stage`   tinyint      NOT NULL DEFAULT 3,    -- 0 egg, 1 chick, 2 pullet, 3 hen
-  `pet_variant` int          NULL,                  -- material group index; NULL = let the seed decide
+  `pet_variant` int          NULL,                  -- item style = material group index; NULL = the default colour
   `pet_seed`    int unsigned NOT NULL DEFAULT 0,    -- "pet seed" attribute
   `pet_name`    varchar(32)  NULL                   -- name tag
 );
@@ -163,7 +186,8 @@ later in case the game overwrote it.
 
 - Only pullets and hens. The game deploys pets from the pullet stage, so chicks and eggs are left out.
 - A pet the game put there itself (a player who really owns one) is left alone.
-- `!pet color` does not reach the intro. The intro pet's look comes from the seed only.
+- `!pet color` does not reach the intro. The game colours the intro pet from the item's style, which a server cannot
+  send, so it always has its default colour. Its shape and colour jitter still come from the seed.
 - The intro only runs with `mp_team_intro_type` on (the default `auto` means: when `mp_halftime` is set), and only on
   maps that have the intro spots and cameras. The official maps do; most workshop maps do not.
 - The end-of-match line-up is **not** covered. It reads the pet from the player's loadout, which a plugin cannot

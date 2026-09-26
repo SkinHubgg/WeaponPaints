@@ -41,11 +41,11 @@
 	"wp_pet_name_cleared": "Your pet no longer has a name",
 	"wp_pet_seed_set": "Your pet's look seed is now {lime}{0}{default}",
 	"wp_pet_variant_set": "Your pet's color is now {lime}#{0}{default}",
-	"wp_pet_variant_cleared": "Your pet's color now follows its seed",
+	"wp_pet_variant_cleared": "Your pet's color is now the default",
 	"wp_pet_none": "You have no pet yet. Type {lime}!pet{default} to pick one",
 	"wp_pet_invalid": "{lightred}That value is not valid",
 	"wp_pet_no_permission": "{lightred}You don't have access to pets",
-	"wp_pet_usage": "{lime}!pet{default} menu, {lime}!pet name <name>{default}, {lime}!pet seed [number]{default}, {lime}!pet color <number|random>{default}, {lime}!pet stage <chick|pullet|hen>{default}, {lime}!pet off{default}",
+	"wp_pet_usage": "{lime}!pet{default} menu, {lime}!pet name <name>{default}, {lime}!pet seed [number]{default}, {lime}!pet color <number|random|default>{default}, {lime}!pet stage <chick|pullet|hen>{default}, {lime}!pet off{default}",
 
 	"None": "None"
 }

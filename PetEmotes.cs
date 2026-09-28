@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Commands;
+using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Menu;
 using Microsoft.Extensions.Logging;
 
@@ -127,9 +128,9 @@ public partial class WeaponPaints
 					continue;
 				}
 
-				var activity = (ChickenActivity)pending.Emote.Activity;
+				var activity = pending.Emote.Activity;
 				var waited = Server.CurrentTime - pending.QueuedAt;
-				var current = chicken.CurrentActivity;
+				var current = PetCurrentActivity(chicken);
 
 				if (pending.WaitsForChange)
 				{
@@ -166,11 +167,11 @@ public partial class WeaponPaints
 					_petEmotes.TryRemove(slot, out _);
 					PetDebug("Emote {Emote} on pet 0x{Pet:x8} not taken after {Seconds:0} s (current activity {Current}, " +
 					         "desired {Desired}) - dropped", pending.Emote.Id, pending.PetHandle, waited,
-						(int)chicken.CurrentActivity, (int)chicken.DesiredActivity);
+						PetCurrentActivity(chicken), PetDesiredActivity(chicken));
 					continue;
 				}
 
-				chicken.DesiredActivity = activity;
+				PetDesiredActivity(chicken) = activity;
 			}
 			catch (Exception ex)
 			{
@@ -270,16 +271,29 @@ public partial class WeaponPaints
 		_petEmoteCooldowns[slot] = DateTime.UtcNow.AddSeconds(Math.Max(0, Config.Additional.PetEmoteCooldownSeconds));
 		// Written at once, unless the pet is doing that very activity now: then the clip it is playing and the AI's
 		// own next move go first (see PetEmoteTick).
-		var target = (ChickenActivity)emote.Activity;
-		var alreadyIn = chicken.CurrentActivity == target;
+		var target = emote.Activity;
+		var alreadyIn = PetCurrentActivity(chicken) == target;
 		_petEmotes[slot] = new PendingPetEmote(active.Handle, emote, Server.CurrentTime, alreadyIn);
-		if (!alreadyIn) chicken.DesiredActivity = target;
+		if (!alreadyIn) PetDesiredActivity(chicken) = target;
 
 		PrintPet(player, "wp_pet_emote_queued", PetEmoteLabel(emote));
 		PetDebug("{Owner} asked pet 0x{Pet:x8} for {Emote} (activity {Activity}; now {Current}){Already}",
-			PetOwnerLabel(player, slot), active.Handle, emote.Id, emote.Activity, (int)chicken.CurrentActivity,
+			PetOwnerLabel(player, slot), active.Handle, emote.Id, emote.Activity, PetCurrentActivity(chicken),
 			alreadyIn ? " - already in that activity, so it waits until the pet has done something else" : "");
 	}
+
+	/*
+	 * The chicken AI's activity, read and written as the plain EChickenActivity number through the schema. Not through
+	 * CChicken.CurrentActivity / DesiredActivity: their enum type was renamed between CounterStrikeSharp versions
+	 * (ChickenActivity in 1.0.367, EChickenActivity from 1.0.375), so a build against one version threw
+	 * TypeLoadException on every tick on a server running the other. The field names and the int layout are the game's
+	 * and do not change with CounterStrikeSharp.
+	 */
+	private static ref int PetCurrentActivity(CChicken chicken) =>
+		ref Schema.GetRef<int>(chicken.Handle, "CChicken", "m_currentActivity");
+
+	private static ref int PetDesiredActivity(CChicken chicken) =>
+		ref Schema.GetRef<int>(chicken.Handle, "CChicken", "m_desiredActivity");
 
 	#endregion
 }

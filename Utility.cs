@@ -94,7 +94,8 @@ namespace WeaponPaints
 					        `pet_stage` tinyint NOT NULL DEFAULT 3 COMMENT 'upgrade level: 0 egg, 1 chick, 2 pullet, 3 hen',
 					        `pet_variant` int NULL DEFAULT NULL COMMENT 'item style = material group index; NULL = no style, the default group',
 					        `pet_seed` int unsigned NOT NULL DEFAULT 0 COMMENT 'pet seed attribute',
-					        `pet_name` varchar(32) NULL DEFAULT NULL COMMENT 'name tag for the current stage'
+					        `pet_name` varchar(32) NULL DEFAULT NULL COMMENT 'name tag for the current stage',
+					        `pet_hat` varchar(32) NULL DEFAULT NULL COMMENT 'photo booth hat id from data/petPhotobooth.json; NULL = no hat'
 					    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;"
 					];
 
@@ -110,10 +111,62 @@ namespace WeaponPaints
 					await transaction.RollbackAsync();
 					throw new Exception("[WeaponPaints] Unable to create tables!");
 				}
+
+				await AddMissingColumns(connection);
 			}
 			catch (Exception ex)
 			{
 				throw new Exception("[WeaponPaints] Unknown MySQL exception! " + ex.Message);
+			}
+		}
+
+		/// <summary>
+		/// Columns added after their table first shipped. CREATE TABLE IF NOT EXISTS leaves an existing table as it is,
+		/// so each of these is added here when it is missing - every load, idempotent. MySQL has no ADD COLUMN IF NOT
+		/// EXISTS (MariaDB does), so the column is looked up in information_schema first, and a column another server
+		/// or the website added in between (error 1060, duplicate column) counts as done. ALTER TABLE commits on its
+		/// own, so this runs after the CREATE transaction, and a failure is logged rather than thrown: the plugin reads
+		/// these columns only when they exist.
+		/// </summary>
+		private static readonly (string Table, string Column, string Definition)[] AddedColumns =
+		[
+			// Shared contract with the website: the photo booth hat id exactly as data/petPhotobooth.json names it.
+			("wp_player_pets", "pet_hat",
+				"varchar(32) NULL DEFAULT NULL COMMENT 'photo booth hat id from data/petPhotobooth.json; NULL = no hat'")
+		];
+
+		private static async Task AddMissingColumns(MySqlConnector.MySqlConnection connection)
+		{
+			foreach (var (table, column, definition) in AddedColumns)
+			{
+				try
+				{
+					var present = await connection.ExecuteScalarAsync<long>(
+						"SELECT COUNT(*) FROM information_schema.COLUMNS " +
+						"WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = @table AND COLUMN_NAME = @column",
+						new { table, column }) > 0;
+
+					if (!present)
+					{
+						try
+						{
+							await connection.ExecuteAsync($"ALTER TABLE `{table}` ADD COLUMN `{column}` {definition}");
+							WeaponPaints.Instance.Logger.LogInformation("Added column {Table}.{Column}", table, column);
+						}
+						catch (MySqlConnector.MySqlException ex) when (ex.ErrorCode == MySqlConnector.MySqlErrorCode.DuplicateFieldName)
+						{
+							// Added by someone else between the check and the ALTER.
+						}
+					}
+
+					if (table == "wp_player_pets" && column == "pet_hat") WeaponPaints.PetHatColumnReady = true;
+				}
+				catch (Exception ex)
+				{
+					WeaponPaints.Instance.Logger.LogWarning(
+						"Could not add the missing column {Table}.{Column} ({Reason}) - the feature that uses it is not " +
+						"saved until it exists", table, column, ex.Message);
+				}
 			}
 		}
 

@@ -20,6 +20,8 @@ Unfinished, unoptimized and not fully functional ugly demo weapon paints plugin 
 - Added command **`!pins`** to show menu with pins
 - Added command **`!music`** to show menu with music
 - Added command **`!pet`** to show menu with chicken pets (CS2 1.41.8.2), see [Pets](#pets)
+- Added command **`!pethat`** to put one of the ten photo booth hats on the pet, see [Pet hats](#pet-hats)
+- Added command **`!petemote`** to make the pet do a trick, squat, sleep and more, see [Pet emotes](#pet-emotes)
 - Stickers and charms on the **C4** (CS2 1.41.8.2), and on guns saved as "Default" (paint 0), see [C4 stickers](#c4-stickers)
 - Translations support, submit a PR if you want to share your translation
 
@@ -134,11 +136,27 @@ Things to watch when testing:
 - whether it keeps following (the leader is re-asserted every second) and whether the model is right per stage;
 - eggs never leave the nest; a chick uses `models/chicken/chick.vmdl`, a pullet or hen its breed's model.
 
-Lifecycle: spawned the frame after the owner spawns, stays put when the owner dies, comes back on the owner's next
-spawn if it was killed, and is removed on team change, disconnect, map end and plugin unload. A player the game
-itself gave a pet (a chicken whose owner is them) gets no second one. At every round start the game removes each
-chicken that has an owner but is not that owner's real pet, which includes the plugin's; the plugin puts every living
-owner's pet back one frame later.
+Lifecycle: every life of the owner gets its own pet. When the owner spawns, the pet is queued and tried a frame later,
+a quarter second later and then every second until the owner is really alive (read from the player's pawn). The
+pet from the previous life (still standing where the owner died, or already killed) is removed together with its hat,
+and a new one spawns behind the owner and follows the new pawn. So the pet always comes back with its owner, also on
+deathmatch and respawn servers, and there is never a second one. While the owner is dead the pet stays where it is.
+A pet killed while its owner is alive comes back on their next spawn. It is removed on team change, disconnect, map
+end and plugin unload. A player the game itself gave a pet (a chicken whose owner is them) gets no second one. At
+every round start the game removes each chicken that has an owner but is not that owner's real pet, which includes the
+plugin's; the plugin puts every living owner's pet back one frame later.
+
+Before 3.4c the pet was tried once, a frame after the owner spawned. If the owner did not count as alive at that exact
+moment, or an old pet the plugin had lost track of was still around (it then looked like a pet the game had given the
+player), nothing tried again and the pet stayed away until `!pet` was used.
+
+Every chicken and hat the plugin spawns is named `weaponpaints_pet` / `weaponpaints_pet_hat`. Every 5 seconds the
+plugin removes any of them it no longer tracks, including ones left behind by a plugin reload.
+
+Debug log: set `PetDebugLog` to `true` to log each step with a `[pet debug]` prefix: owner spawned (with the
+pawn's and the controller's alive state), queued pet waits, pet spawned / kept / replaced (and why), owner died (and
+where the pet was), pet gone (killed, deleted, removed by the game), stray removed, hat put on / removed, emote asked /
+started / dropped. It is several lines per player per round, so switch it off again after testing.
 
 Names: the game keeps one name per stage (chick, pullet, hen), but only the item's main custom name is sent to
 players, so that is where the label's name comes from at every stage. The plugin has one name per player (the current
@@ -153,12 +171,19 @@ Commands (`CommandPet`, default `pet`):
 | `!pet name <text>` | Name the pet (32 characters max, the column width; empty clears it) |
 | `!pet seed [number]` | A new random seed (shape and colour jitter), or a specific one (not 0) |
 | `!pet color <number\|random\|default>` | Pick a colour (material group index), roll one, or go back to the default |
-| `!pet stage <chick\|pullet\|hen>` | Change the stage |
+| `!pet stage <chick\|pullet\|hen>` | Change the stage: pullet or hen for a breed. The Chick pet is always a chick; pick it from the `!pet` menu |
 | `!pet off` | No pet |
+| `!pethat` | Menu: pick a hat for the pet, or None |
+| `!pethat <1-10\|name\|none>` | Pick a hat by menu number or name (`top_hat`, `nose_glasses`...; `top hat` works too) |
+| `!petemote` | Menu: trick, squat, sleep, feed, shoulder, panic, idle |
+| `!petemote <trick\|squat\|sleep\|feed\|shoulder\|panic\|idle>` | Play one; `!petemote help` lists them |
 
 Config (`Additional`): `PetsEnabled` (default `true`), `CommandPet` (default `["pet"]`), `PetPermission` (default
 `""` = everyone, e.g. `"@css/vip"` - also decides whether a player's pet is spawned at all),
-`PetTeamIntroExperimental` (default `false`, see [Team intro](#team-intro-experimental)).
+`PetTeamIntroExperimental` (default `false`, see [Team intro](#team-intro-experimental)), `PetHatsEnabled` (default
+`true`), `CommandPetHat` (default `["pethat"]`), `PetEmotesEnabled` (default `true`), `CommandPetEmote` (default
+`["petemote"]`), `PetEmoteCooldownSeconds` (default `10`), `PetDebugLog` (default `false`). `!pethat` shares the
+`CmdRefreshCooldownSeconds` cooldown with `!pet`; `!petemote` has its own.
 
 Table (created automatically):
 
@@ -169,12 +194,81 @@ CREATE TABLE IF NOT EXISTS `wp_player_pets` (
   `pet_stage`   tinyint      NOT NULL DEFAULT 3,    -- 0 egg, 1 chick, 2 pullet, 3 hen
   `pet_variant` int          NULL,                  -- item style = material group index; NULL = the default colour
   `pet_seed`    int unsigned NOT NULL DEFAULT 0,    -- "pet seed" attribute
-  `pet_name`    varchar(32)  NULL                   -- name tag
+  `pet_name`    varchar(32)  NULL,                  -- name tag
+  `pet_hat`     varchar(32)  NULL                   -- photo booth hat id, see Pet hats; NULL = no hat
 );
 ```
 
-The pet models are precached on map load, so a plugin loaded mid-map may show pets on the default chicken model until
-the next map.
+`pet_hat` is new in 3.4c. On every load the plugin adds it to an existing `wp_player_pets` when it is missing (it
+checks `information_schema` first, so running it again, or on several servers at once, is safe). The website writes
+the same column. Until the column exists, pets still load and save, only the hat is not saved.
+
+The pet and hat models are precached on map load, so a plugin loaded mid-map may show pets on the default chicken
+model, and no hats, until the next map.
+
+### Pet hats
+
+`!pethat` puts one of the ten hats from the game's pet photo booth on the pet. In a match the game has no hats; the
+plugin spawns the hat model and fixes it to the chicken's head, the way the booth does:
+
+| # | `pet_hat` | Name | Model (`models/photobooth/silly_hats/`) | Sits on |
+| --- | --- | --- | --- | --- |
+| 1 | `helmet` | Helmet | `helmet.vmdl` | `head_attach` |
+| 2 | `armor` | Armor Helmet | `armor_helmet.vmdl` | `head_attach` |
+| 3 | `alien` | Alien | `alien.vmdl` | `head_attach` |
+| 4 | `banana` | Banana | `banana.vmdl` | `head_attach` |
+| 5 | `glasses` | Glasses | `glasses.vmdl` | `eyewear_attach` |
+| 6 | `nose_glasses` | Nose Glasses | `nose_glasses.vmdl` | `eyewear_attach` |
+| 7 | `party` | Party Hat | `party.vmdl` | `head_attach` |
+| 8 | `sprout` | Sprout | `sprout.vmdl` | `head_attach` |
+| 9 | `top_hat` | Top Hat | `top_hat.vmdl` | `head_attach` |
+| 10 | `wizard_hat` | Wizard Hat | `wizard_hat.vmdl` | `head_attach` |
+
+- `pet_hat` holds the id exactly as the CDN's `data/petPhotobooth.json` names it (`headwear.items[].name`); `NULL` is
+  no hat. An id the plugin does not know shows no hat and is saved back unchanged.
+- The hat's own scale is the booth's, per stage: chick 1.0, pullet 0.43, hen 0.55. The pet's size (the game spawns
+  pets at 1.4 x their stage size) applies on top.
+- The hat is not solid. Changing the hat swaps only the hat, the pet stays. The hat goes away with the pet and comes
+  back with the next one, and it stays on through a change of pet, like the name. A hat that keeps disappearing by
+  itself is tried 3 times per pet, then given up on with one warning; taking it off or picking a hat again
+  starts that count over.
+- Eggs never leave the nest, so a hat on an egg is saved but not shown.
+- **Untested in game.** The first hat after each plugin load logs one `Pet hat check` line: the parent should be the
+  pet, the attachment index should not be -1, and the scales show what the server applied.
+
+### Pet emotes
+
+`!petemote` makes the pet play one of the moves the game's own chicken can play in a match. The server runs the
+pet's animation and every player sees it. The plugin can pick the move, but not which version of it: the game rolls
+that itself every time, so the menu shows which numbered versions the game picks from.
+
+| Emote | Game activity | What plays (the game picks one) |
+| --- | --- | --- |
+| Trick | 7 | tricks 1-10; 1 roll in 11 is empty and shows nothing |
+| Squat | 1 | sits down, one of squat loops 1, 3, 4, stands up |
+| Sleep | 10 | sits down, sleeps for 11 s, stands up |
+| Feed | 9 | about 24 s of pecking |
+| Shoulder | 11 | one of the 3 shoulder perch poses, on the ground |
+| Panic | 6 | one of 2 panic reactions, then a short run |
+| Idle | 0 | one of 3 idles |
+
+- The pet starts the emote when it finishes what it is doing now: at once while it walks or runs, usually within a
+  few seconds, up to about 13 s after a squat or a sleep and 25 s after a feed. If it has not started after 30 s the
+  request is dropped.
+- Asking for the move the pet is doing right now (Idle while it stands, Squat while it squats in stay mode, Trick
+  during a trick) queues it behind the current one: it plays once the pet has done something else in between. A pet
+  that keeps doing that same move never gets there, and the request is dropped after 30 s.
+- `PetEmoteCooldownSeconds` (default 10) is per player.
+- Not offered: Hungry, which ends in a loop the pet never leaves by itself (it would stop following). Walk, run,
+  glide and land come from moving, and turning needs a value only the game sets. Photo poses, the growth reveal and
+  the held (inspect) view only exist in the game's menus.
+- On casual, competitive and wingman the game puts every owned pet into "stay" mode 5 s after the freeze time ends
+  (it stops following and squats). The plugin still sets the owner as the pet's leader every second. A pet spawned
+  after that point (a respawn mid-round) is a new chicken and follows again until the next round. Whether Sleep, Feed
+  and Shoulder are played while the pet is in stay mode is not known yet.
+- **Untested in game.** With `PetDebugLog` on, each emote logs when it started and after how long, or that it was
+  dropped and what the pet was doing instead. A request for the move the pet was already doing says so on the
+  `asked` line, logs when the pet left that move, and only then logs `started`.
 
 ### Team intro (experimental)
 

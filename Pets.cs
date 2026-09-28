@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using CounterStrikeSharp.API;
@@ -36,6 +37,12 @@ public class PetInfo
 
 	/// <summary>Name tag for the current stage, or null.</summary>
 	public string? Name { get; set; }
+
+	/// <summary>
+	/// pet_hat: the photo booth hat id exactly as CDN data/petPhotobooth.json names it ("top_hat", "glasses"...), or
+	/// null for no hat. Kept as stored - an id this plugin does not know draws no hat but is written back unchanged.
+	/// </summary>
+	public string? Hat { get; set; }
 }
 
 /*
@@ -87,12 +94,23 @@ public class PetInfo
  * PetTeamIntro.cs puts the same pet item into the team intro's m_petItem - experimental, off by default
  * (PetTeamIntroExperimental).
  *
- * Lifecycle: a pet is spawned the frame after its owner spawns (and when their row arrives from the database while
- * they are alive), follows them, stays where it is when they die, comes back on their next spawn if it was killed,
- * comes back a frame after round_start when the game's chicken manager removed it (see OnRoundStartPets), and is
- * removed on team change, disconnect, map end and plugin unload. Eggs never
- * leave the nest. A player the game itself gave a pet (a chicken whose m_owner is them - real pullets can deploy
- * from about 2026-10-06) gets no second one from here.
+ * Lifecycle: every owner life gets its own pet. player_spawn queues the owner; the queue is worked a frame later, a
+ * quarter second later and then every second until the owner's PAWN is alive (its own life state, not the
+ * controller's cached m_bPawnIsAlive). The old code tried exactly once, a frame after player_spawn: if the owner did
+ * not count as alive at that moment, or a chicken of ours that had dropped out of tracking was still standing (it
+ * then counted as a game-spawned pet and blocked its owner), nothing tried again and the pet stayed away until !pet -
+ * the "gone after the owner dies" bug. A pet created before the owner's latest spawn belongs to the last
+ * life: it is killed (with its hat) and a new one is created next to the new pawn, following it. A new entity is
+ * also the only way out of the chicken manager's "stay" mode (see PetEmotes.cs), so a respawned owner's pet follows
+ * again. When the owner dies the pet stays where it is until they spawn again. A pet killed or removed while its
+ * owner lives comes back on their next spawn; round_start's removal by the game's chicken manager is put back a
+ * frame later (see OnRoundStartPets). The pet is removed on team change, disconnect, map end and plugin unload.
+ * Eggs never leave the nest. A player the game itself gave a pet (a chicken whose m_owner is them - real pullets can
+ * deploy from about 2026-10-06) gets no second one from here.
+ *
+ * Never two: every chicken and hat this plugin creates is named (PetEntityName / PetHatEntityName) and its handle
+ * remembered, and the pet timer kills any of them nobody tracks any more - a pet whose tracking was dropped can
+ * neither stand around forever nor count as a game-spawned pet that blocks its owner. PetDebugLog logs each step.
  *
  * Valve's server guidelines forbid giving players items they do not own, and this is exactly that - the same risk
  * the rest of WeaponPaints already carries. PetsEnabled turns it off.
@@ -124,6 +142,11 @@ public partial class WeaponPaints
 	private const float PetSpawnDistance = 40f;
 	private const float PetMaxFollowDistance = 1500f;
 
+	/// <summary>For this long after it spawns, a pet farther than PetCatchUpDistance from its owner is brought back.</summary>
+	private const float PetCatchUpSeconds = 3f;
+
+	private const float PetCatchUpDistance = 600f;
+
 	/// <summary>
 	/// "pet food expiration date" is written a month ahead. A pet whose food ran out is retired in the game, and an
 	/// item with no date at all is not something the client has ever been sent - a date in the future is the one
@@ -133,6 +156,24 @@ public partial class WeaponPaints
 	private const int PetFoodDays = 30;
 
 	private const uint InvalidEntityHandle = 0xFFFFFFFF;
+
+	/// <summary>
+	/// targetname of every chicken this plugin spawns. It outlives the plugin's own bookkeeping (a hot reload, a
+	/// dropped handle), so a stray one can always be told apart from a map chicken or a game pet, and removed.
+	/// </summary>
+	internal const string PetEntityName = "weaponpaints_pet";
+
+	/// <summary>How long after player_spawn the queued pet is tried a second time; after that the pet timer retries.</summary>
+	private const float PetSpawnRetrySeconds = 0.25f;
+
+	/// <summary>
+	/// Attempts at a queued pet while its owner IS alive before giving up (a create that keeps failing). Attempts while
+	/// the owner is dead or not spawned yet do not count - those wait as long as it takes.
+	/// </summary>
+	private const byte PetSpawnMaxAttempts = 5;
+
+	/// <summary>The "why" of a queued pet worked by the pet timer, for the debug log.</summary>
+	private const string PetTimerReason = "pet timer";
 
 	/// <summary>
 	/// CEntityIdentity m_flags bit for an entity whose removal is queued (EF_MARKED_FOR_DELETE in Valve's hl2sdk). The
@@ -193,10 +234,34 @@ public partial class WeaponPaints
 	internal static readonly ConcurrentDictionary<int, PetInfo> GPlayersPet = new();
 
 	/// <summary>
-	/// Slots whose pet should be (re)spawned as soon as they are alive. Filled from the database loader, which runs on
-	/// a worker thread, and drained by the pet timer on the game thread - so no worker ever touches an entity.
+	/// Slots whose pet should be (re)spawned as soon as they are alive, with the attempts made while they were. Filled
+	/// by player_spawn and by the database loader, which runs on a worker thread, and drained on the game thread (a
+	/// frame after player_spawn, a quarter second after, then by the pet timer) - so no worker ever touches an entity,
+	/// and a spawn that finds the owner not quite alive yet is tried again instead of dropped.
 	/// </summary>
 	private static readonly ConcurrentDictionary<int, byte> PetSpawnQueue = new();
+
+	/// <summary>
+	/// Server tick of each owner's latest player_spawn. A pet created before it belongs to an earlier life and is
+	/// replaced by a new one at the new pawn (see SpawnPlayerPet).
+	/// </summary>
+	private readonly ConcurrentDictionary<int, int> _petOwnerSpawnTicks = new();
+
+	/// <summary>
+	/// Server tick of each owner's latest player_death. An owner who is alive again with a death newer than their
+	/// latest player_spawn (same tick counts as not newer) came back without the event (a respawn some other plugin did its own way); the pet timer
+	/// then treats it as a spawn.
+	/// </summary>
+	private readonly ConcurrentDictionary<int, int> _petOwnerDeathTicks = new();
+
+	/// <summary>
+	/// Every chicken and hat entity (raw handle) created this map, tracked or not. With PetEntityName and
+	/// PetHatEntityName it tells this plugin's entities from everyone else's. Cleared at map end.
+	/// </summary>
+	private readonly ConcurrentDictionary<uint, byte> _spawnedPetEntities = new();
+
+	/// <summary>Set once wp_player_pets.pet_hat is known to exist (Utility.AddMissingColumns); hats are saved from then on.</summary>
+	internal static volatile bool PetHatColumnReady;
 
 	/// <summary>
 	/// What a spawned pet looks like. Equal looks mean the live chicken can be kept as it is. Group is the material group
@@ -210,8 +275,9 @@ public partial class WeaponPaints
 	/// reads the pet attributes itself and may rewrite the item after spawn, and a pet that stopped matching would be
 	/// dropped from here while it still stands there - never removed again, and counted as a game-spawned pet that
 	/// blocks its owner from ever getting one of ours. ItemId is only kept to log, once, whether that happens.
+	/// CreatedTick is the server tick it was created on, compared with the owner's latest spawn.
 	/// </summary>
-	private sealed record ActivePet(uint Handle, ulong ItemId, ulong SteamId, PetLook Look);
+	private sealed record ActivePet(uint Handle, ulong ItemId, ulong SteamId, PetLook Look, int CreatedTick);
 
 	private readonly ConcurrentDictionary<int, ActivePet> _activePets = new();
 	private static readonly ConcurrentDictionary<string, short> PetSchemaOffsets = new();
@@ -355,13 +421,40 @@ public partial class WeaponPaints
 		RegisterEventHandler<EventRoundStart>(OnRoundStartPets);
 		RegisterEventHandler<EventPlayerTeam>(OnPlayerTeamPet);
 		RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnectPet);
+		RegisterEventHandler<EventPlayerDeath>(OnPlayerDeathPet);
 		RegisterListener<Listeners.OnMapEnd>(OnMapEndPets);
 		RegisterListener<Listeners.OnServerPrecacheResources>(OnPrecachePets);
+		RegisterListener<Listeners.OnEntityDeleted>(OnEntityDeletedPets);
 
 		AddTimer(PetThinkSeconds, PetThink, TimerFlags.REPEAT);
 
 		RegisterPetTeamIntro();
+		RegisterPetEmotes();
+
+		if (Config.Additional.PetDebugLog)
+			Logger.LogInformation("PetDebugLog is on: every pet lifecycle step is logged with a \"[pet debug]\" prefix");
 	}
+
+	/// <summary>One lifecycle line for Amir's server test, only with PetDebugLog on. Game thread or worker.</summary>
+	private void PetDebug(string message, params object?[] args)
+	{
+		if (!Config.Additional.PetDebugLog) return;
+
+		try
+		{
+#pragma warning disable CA2254 // The template is always one of the constant strings in this file.
+			Logger.LogInformation("[pet debug] " + message, args);
+#pragma warning restore CA2254
+		}
+		catch (Exception)
+		{
+			// A log line must never take the pet code down with it.
+		}
+	}
+
+	/// <summary>"Name (slot N)" for the debug log.</summary>
+	private static string PetOwnerLabel(CCSPlayerController? player, int slot) =>
+		player is { IsValid: true } ? $"{player.PlayerName} (slot {slot})" : $"slot {slot}";
 
 	/// <summary>
 	/// The pet models, precached for every map. A plugin loaded mid-map misses this until the next map, which may
@@ -374,6 +467,10 @@ public partial class WeaponPaints
 			         .Select(pet => pet.Model)
 			         .Distinct(StringComparer.Ordinal))
 			manifest.AddResource(model);
+
+		if (Config.Additional.PetHatsEnabled)
+			foreach (var hat in PetHats)
+				manifest.AddResource(hat.Model);
 	}
 
 	private HookResult OnPlayerSpawnPet(EventPlayerSpawn @event, GameEventInfo info)
@@ -382,17 +479,108 @@ public partial class WeaponPaints
 		if (player == null || !player.IsValid || player.IsBot || player.IsHLTV) return HookResult.Continue;
 
 		var slot = player.Slot;
-		var steamId = player.SteamID;
 
-		// Next frame: by then the pawn stands at its spawn point, and a round restart has finished its clean-up.
-		Server.NextFrame(() =>
+		// A new life: whatever pet is out now belongs to the last one and is replaced (see SpawnPlayerPet). Queued
+		// rather than spawned here, and the queue is kept until the owner's pawn is really alive: next frame (by then
+		// the pawn stands at its spawn point, and a round restart has finished its clean-up), a quarter second later,
+		// then every second from the pet timer.
+		_petOwnerSpawnTicks[slot] = Server.TickCount;
+		PetSpawnQueue[slot] = 0;
+
+		var pawn = player.PlayerPawn.Value;
+		PetDebug("{Owner} spawned (tick {Tick}, team {Team}, pawn 0x{Pawn:x8}, pawn alive {PawnAlive}, controller alive " +
+		         "{ControllerAlive}, pet {Pet}) - queued",
+			PetOwnerLabel(player, slot), Server.TickCount, player.Team, player.PlayerPawn.Raw,
+			pawn is { IsValid: true } && pawn.LifeState == (byte)LifeState_t.LIFE_ALIVE, player.PawnIsAlive,
+			_activePets.TryGetValue(slot, out var active) ? $"0x{active.Handle:x8}" : "none");
+
+		Server.NextFrame(() => ProcessQueuedPet(slot, "spawn +1 frame"));
+		AddTimer(PetSpawnRetrySeconds, () => ProcessQueuedPet(slot, "spawn +0.25 s"), TimerFlags.STOP_ON_MAPCHANGE);
+
+		return HookResult.Continue;
+	}
+
+	/// <summary>
+	/// Works one queued slot: spawns (or keeps, or replaces) the pet once its owner is alive, and leaves it queued
+	/// while they are not. Game thread only.
+	/// </summary>
+	private void ProcessQueuedPet(int slot, string why)
+	{
+		if (!PetSpawnQueue.TryGetValue(slot, out var attempts)) return;
+
+		var player = Utilities.GetPlayerFromSlot(slot);
+		if (player == null || !player.IsValid || player.IsBot || player.IsHLTV)
 		{
-			var current = Utilities.GetPlayerFromSlot(slot);
-			if (current == null || !current.IsValid || current.SteamID != steamId) return;
-
 			PetSpawnQueue.TryRemove(slot, out _);
-			SpawnPlayerPet(current);
-		});
+			return;
+		}
+
+		// Dead, not spawned yet or spectating: stays queued, whatever the reason, until the owner is alive. Logged for
+		// the two tries right after player_spawn only, not once a second while someone spectates.
+		if (!PetOwnerAlive(player, out _))
+		{
+			if (why != PetTimerReason)
+				PetDebug("{Owner}: queued pet waits ({Why}) - owner not alive yet (team {Team}, controller alive " +
+				         "{Alive})", PetOwnerLabel(player, slot), why, player.Team, player.PawnIsAlive);
+			return;
+		}
+
+		if (SpawnPlayerPet(player, why))
+		{
+			PetSpawnQueue.TryRemove(slot, out _);
+			return;
+		}
+
+		if (++attempts >= PetSpawnMaxAttempts)
+		{
+			PetSpawnQueue.TryRemove(slot, out _);
+			Logger.LogWarning("Gave up spawning the pet for {Player} after {Attempts} attempts - it is tried again on " +
+			                  "their next spawn", player.PlayerName, attempts);
+			return;
+		}
+
+		PetSpawnQueue[slot] = attempts;
+	}
+
+	/// <summary>
+	/// Whether the owner is alive, read from the pawn itself (its life state and health) rather than the controller's
+	/// m_bPawnIsAlive, which is a copy the controller refreshes on its own schedule. T or CT only.
+	/// </summary>
+	private static bool PetOwnerAlive(CCSPlayerController player, [NotNullWhen(true)] out CCSPlayerPawn? pawn)
+	{
+		pawn = player.PlayerPawn.Value;
+		if (pawn == null || !pawn.IsValid) return false;
+		if (player.Team is not (CsTeam.Terrorist or CsTeam.CounterTerrorist)) return false;
+
+		return pawn.LifeState == (byte)LifeState_t.LIFE_ALIVE && pawn.Health > 0;
+	}
+
+	/// <summary>
+	/// Notes the death, for a respawn that comes without a player_spawn (see PetThink), and logs where the pet was.
+	/// The pet itself stays where it is.
+	/// </summary>
+	private HookResult OnPlayerDeathPet(EventPlayerDeath @event, GameEventInfo info)
+	{
+		var player = @event.Userid;
+		if (player == null || !player.IsValid || player.IsBot || player.IsHLTV) return HookResult.Continue;
+
+		var slot = player.Slot;
+		_petOwnerDeathTicks[slot] = Server.TickCount;
+
+		if (!Config.Additional.PetDebugLog) return HookResult.Continue;
+
+		if (!_activePets.TryGetValue(slot, out var active))
+		{
+			PetDebug("{Owner} died with no pet out{Queued}", PetOwnerLabel(player, slot),
+				PetSpawnQueue.ContainsKey(slot) ? " (one is queued)" : "");
+			return HookResult.Continue;
+		}
+
+		var chicken = ResolvePet(active, out var lost);
+		PetDebug("{Owner} died; pet 0x{Handle:x8} {State}, leader 0x{Leader:x8}, pawn 0x{Pawn:x8} - it stays until " +
+		         "their next spawn, which replaces it",
+			PetOwnerLabel(player, slot), active.Handle, chicken != null ? "is standing" : $"is gone ({lost})",
+			chicken?.Leader.Raw ?? 0, player.PlayerPawn.Raw);
 
 		return HookResult.Continue;
 	}
@@ -413,10 +601,10 @@ public partial class WeaponPaints
 			foreach (var slot in GPlayersPet.Keys)
 			{
 				var player = Utilities.GetPlayerFromSlot(slot);
-				if (player == null || !player.IsValid || !player.PawnIsAlive) continue;
+				if (player == null || !player.IsValid || !PetOwnerAlive(player, out _)) continue;
 
-				PetSpawnQueue.TryRemove(slot, out _);
-				SpawnPlayerPet(player);
+				// Settled here or not, a queued owner stays queued until SpawnPlayerPet has put a pet out.
+				if (SpawnPlayerPet(player, "round_start +1 frame")) PetSpawnQueue.TryRemove(slot, out _);
 			}
 		});
 
@@ -429,6 +617,8 @@ public partial class WeaponPaints
 		if (player == null || !player.IsValid) return HookResult.Continue;
 
 		// Any team change sends the pet home; the owner's next spawn brings it back.
+		if (_activePets.ContainsKey(player.Slot))
+			PetDebug("{Owner} changed team - pet removed until their next spawn", PetOwnerLabel(player, player.Slot));
 		RemovePlayerPet(player.Slot);
 		return HookResult.Continue;
 	}
@@ -441,27 +631,39 @@ public partial class WeaponPaints
 		RemovePlayerPet(player.Slot);
 		GPlayersPet.TryRemove(player.Slot, out _);
 		PetSpawnQueue.TryRemove(player.Slot, out _);
+		_petOwnerSpawnTicks.TryRemove(player.Slot, out _);
+		_petOwnerDeathTicks.TryRemove(player.Slot, out _);
+		ForgetPetEmotes(player.Slot);
 		return HookResult.Continue;
 	}
 
 	private void OnMapEndPets()
 	{
-		// The chickens go with the map; only the bookkeeping is left to clear. The same for the team intro spots.
+		// The chickens and hats go with the map; only the bookkeeping is left to clear. The same for the team intro
+		// spots.
 		_activePets.Clear();
+		_petHats.Clear();
+		_petHatAttempts.Clear();
+		_spawnedPetEntities.Clear();
+		_petOwnerSpawnTicks.Clear();
+		_petOwnerDeathTicks.Clear();
 		PetSpawnQueue.Clear();
 		_teamIntroPetItems.Clear();
+		ClearPetEmotes();
 	}
 
 	/// <summary>
-	/// Removes every pet this plugin spawned, so a reload does not leave orphaned chickens behind, and takes its pets
-	/// back out of the team intro spots. On a server shutdown the map ends first, OnMapEndPets has already emptied both
-	/// lists, and this touches nothing.
+	/// Removes every pet (and hat) this plugin spawned, so a reload does not leave orphaned chickens behind, and takes
+	/// its pets back out of the team intro spots. On a server shutdown the map ends first, OnMapEndPets has already
+	/// emptied the lists, and this touches nothing. Anything missed here still carries PetEntityName /
+	/// PetHatEntityName, and the next plugin instance's pet timer removes it (SweepStrayPets).
 	/// </summary>
 	public override void Unload(bool hotReload)
 	{
 		try
 		{
 			foreach (var slot in _activePets.Keys) RemovePlayerPet(slot);
+			foreach (var slot in _petHats.Keys) RemovePetHat(slot);
 			ClearTeamIntroPets();
 		}
 		catch (Exception ex)
@@ -479,34 +681,44 @@ public partial class WeaponPaints
 	/// </summary>
 	private void PetThink()
 	{
-		foreach (var slot in PetSpawnQueue.Keys)
+		// Alive again after a death, with no player_spawn since: a new life all the same. A player_spawn on the same
+		// tick as the death counts as that respawn: a respawn plugin that calls Respawn inside player_death fires it
+		// then, in either order. (Spawned and then died on one tick is dead: PetOwnerAlive skips that owner, and the pet
+		// that spawn queued stays queued until they are alive again, however they come back.)
+		foreach (var (slot, deathTick) in _petOwnerDeathTicks)
 		{
-			var queued = Utilities.GetPlayerFromSlot(slot);
-			if (queued == null || !queued.IsValid)
-			{
-				PetSpawnQueue.TryRemove(slot, out _);
-				continue;
-			}
+			if (_petOwnerSpawnTicks.TryGetValue(slot, out var spawnTick) && spawnTick >= deathTick) continue;
 
-			// Dead or not spawned yet: their spawn event handles it.
-			if (!queued.PawnIsAlive) continue;
+			var owner = Utilities.GetPlayerFromSlot(slot);
+			if (owner == null || !owner.IsValid || !PetOwnerAlive(owner, out _)) continue;
 
-			PetSpawnQueue.TryRemove(slot, out _);
-			SpawnPlayerPet(queued);
+			PetDebug("{Owner} is alive again with no player_spawn since their death - treated as a spawn",
+				PetOwnerLabel(owner, slot));
+			_petOwnerSpawnTicks[slot] = Server.TickCount;
+			PetSpawnQueue[slot] = 0;
 		}
+
+		// Queued owners (player_spawn, a row from the database) whose earlier tries found them not alive yet.
+		foreach (var slot in PetSpawnQueue.Keys) ProcessQueuedPet(slot, PetTimerReason);
+
+		// Walking every entity (game-spawned pets, strays of ours) runs every fifth tick rather than every second.
+		var scanEntities = ++_petThinkTicks % 5 == 0;
+		if (scanEntities) SweepStrayPets();
 
 		if (_activePets.IsEmpty) return;
 
-		// Looking for game-spawned pets walks every entity, so it runs every fifth tick rather than every second.
-		var scanForGamePets = ++_petThinkTicks % 5 == 0;
 		HashSet<uint>? gameOwners = null;
 
 		foreach (var (slot, active) in _activePets)
 		{
-			var chicken = ResolvePet(active);
+			var chicken = ResolvePet(active, out var lost);
 			if (chicken == null)
 			{
-				_activePets.TryRemove(slot, out _);
+				// Killed, or removed by the game: it comes back on the owner's next spawn. RemovePlayerPet also takes
+				// its hat away and kills whatever is left of the entity.
+				PetDebug("Pet 0x{Handle:x8} of {Owner} is gone ({Why}) - it comes back on their next spawn",
+					active.Handle, PetOwnerLabel(Utilities.GetPlayerFromSlot(slot), slot), lost);
+				RemovePlayerPet(slot);
 				continue;
 			}
 
@@ -517,13 +729,16 @@ public partial class WeaponPaints
 				continue;
 			}
 
-			// A dead owner's pet stays where it is - the pet book has pages for pets lost to fire, the Zeus and the
-			// planted bomb, so pets clearly outlive their owner's round.
-			var pawn = player.PlayerPawn.Value;
-			if (!player.PawnIsAlive || pawn == null || !pawn.IsValid) continue;
+			// The hat stays with the pet, the owner alive or not; one that went missing is put back.
+			SyncPetHat(slot, chicken, active.Look);
 
-			if (scanForGamePets && (gameOwners ??= GameSpawnedPetOwners()).Contains(pawn.Controller.Raw))
+			// A dead owner's pet stays where it is - the pet book has pages for pets lost to fire, the Zeus and the
+			// planted bomb, so pets clearly outlive their owner's round. Their next spawn replaces it.
+			if (!PetOwnerAlive(player, out var pawn)) continue;
+
+			if (scanEntities && (gameOwners ??= GameSpawnedPetOwners()).Contains(pawn.Controller.Raw))
 			{
+				PetDebug("{Owner} has a pet the game spawned - removing ours", PetOwnerLabel(player, slot));
 				RemovePlayerPet(slot);
 				continue;
 			}
@@ -532,11 +747,20 @@ public partial class WeaponPaints
 			{
 				AssertPetLeader(chicken, player);
 
+				// A pet that fell far behind is brought back. A new one is held closer for its first seconds: a
+				// deathmatch or respawn plugin may move the pawn to its own spawn point a moment after player_spawn,
+				// when the pet has already been placed behind it at the old spot.
+				var young = (Server.TickCount - active.CreatedTick) * Server.TickInterval < PetCatchUpSeconds;
 				if (chicken.AbsOrigin is { } petOrigin && pawn.AbsOrigin is { } ownerOrigin &&
 				    Vector3.Distance(new Vector3(petOrigin.X, petOrigin.Y, petOrigin.Z),
-					    new Vector3(ownerOrigin.X, ownerOrigin.Y, ownerOrigin.Z)) > PetMaxFollowDistance &&
+					    new Vector3(ownerOrigin.X, ownerOrigin.Y, ownerOrigin.Z)) is var distance &&
+				    distance > (young ? PetCatchUpDistance : PetMaxFollowDistance) &&
 				    PetSpawnPoint(pawn) is var (position, angles))
+				{
+					PetDebug("Pet 0x{Handle:x8} was {Distance:0} units from {Owner} - brought back", active.Handle,
+						distance, PetOwnerLabel(player, slot));
 					chicken.Teleport(position, angles, Vector3.Zero);
+				}
 			}
 			catch (Exception ex)
 			{
@@ -546,15 +770,18 @@ public partial class WeaponPaints
 	}
 
 	/// <summary>
-	/// Makes the world match the player's stored pet: spawns it, keeps the live one when nothing about it changed
-	/// (bringing it to the player), replaces it when something did, and removes it when there is no pet to show.
+	/// Makes the world match the player's stored pet: keeps the live one when it was created in the owner's current
+	/// life and nothing about its look changed, replaces it when either is not so (a new life gets a new pet at the new
+	/// pawn), spawns one when there is none, and removes it when there is no pet to show. Returns false when the pet
+	/// should be there but is not yet - the owner is not alive, or the create failed - so a queued owner stays queued.
 	/// Game thread only.
 	/// </summary>
-	private void SpawnPlayerPet(CCSPlayerController player)
+	private bool SpawnPlayerPet(CCSPlayerController player, string why)
 	{
-		if (!Config.Additional.PetsEnabled || !Utility.IsPlayerValid(player)) return;
+		if (!Config.Additional.PetsEnabled || !Utility.IsPlayerValid(player)) return true;
 
 		var slot = player.Slot;
+		var owner = PetOwnerLabel(player, slot);
 
 		// "No pet to show" first, before the alive check: `!pet off` (or a revoked PetPermission) from a dead or
 		// not yet spawned owner has to take the chicken away now, and PetThink skips dead owners, so nothing else
@@ -564,55 +791,71 @@ public partial class WeaponPaints
 		    FindPet(petInfo.PetId) is not { } definition ||
 		    ResolvePetLook(definition, petInfo) is not { } look)
 		{
+			if (_activePets.ContainsKey(slot))
+				PetDebug("{Owner}: no pet to show ({Why}: no permission, no row, or an egg) - removing it", owner, why);
 			RemovePlayerPet(slot);
-			return;
+			return true;
 		}
 
 		// A change of look while dead waits for the owner's next spawn, which replaces the pet.
-		var pawn = player.PlayerPawn.Value;
-		if (!player.PawnIsAlive || pawn == null || !pawn.IsValid || player.Team is CsTeam.None or CsTeam.Spectator)
-			return;
+		if (!PetOwnerAlive(player, out var pawn))
+		{
+			PetDebug("{Owner}: pet not spawned ({Why}) - owner not alive", owner, why);
+			return false;
+		}
 
 		try
 		{
 			if (GameSpawnedPetOwners().Contains(pawn.Controller.Raw))
 			{
+				PetDebug("{Owner}: has a pet the game spawned - none from the plugin ({Why})", owner, why);
 				RemovePlayerPet(slot);
-				return;
+				return true;
 			}
 
-			if (_activePets.TryGetValue(slot, out var active) && ResolvePet(active) is { } existing)
+			var ownerSpawnTick = _petOwnerSpawnTicks.TryGetValue(slot, out var tick) ? tick : 0;
+
+			if (_activePets.TryGetValue(slot, out var active))
 			{
-				if (active.SteamId == player.SteamID && active.Look == look)
+				var existing = ResolvePet(active, out var lost);
+				var thisLife = active.CreatedTick >= ownerSpawnTick;
+
+				if (existing != null && active.SteamId == player.SteamID && active.Look == look && thisLife)
 				{
-					if (PetSpawnPoint(pawn) is var (position, angles))
-						existing.Teleport(position, angles, Vector3.Zero);
 					AssertPetLeader(existing, player);
-					return;
+					SyncPetHat(slot, existing, look);
+					PetDebug("{Owner}: pet 0x{Handle:x8} kept ({Why})", owner, active.Handle, why);
+					return true;
 				}
 
-				KillPetEntity(existing);
+				PetDebug("{Owner}: replacing pet 0x{Handle:x8} ({Why}: {Reason})", owner, active.Handle, why,
+					existing == null ? $"it is gone - {lost}" : !thisLife ? "the owner spawned again" : "its look changed");
+
+				// Kills the old chicken and its hat before the new one exists, so there is never a second pet.
+				RemovePlayerPet(slot);
 			}
 
-			_activePets.TryRemove(slot, out _);
-			CreatePet(player, pawn, look);
+			return CreatePet(player, pawn, look, why);
 		}
 		catch (Exception ex)
 		{
 			Logger.LogWarning("Could not spawn the pet for {Player}: {Reason}", player.PlayerName, ex.Message);
+			return false;
 		}
 	}
 
-	private void CreatePet(CCSPlayerController player, CCSPlayerPawn pawn, PetLook look)
+	private bool CreatePet(CCSPlayerController player, CCSPlayerPawn pawn, PetLook look, string why)
 	{
-		if (PetSpawnPoint(pawn) is not var (position, angles)) return;
+		if (PetSpawnPoint(pawn) is not var (position, angles)) return false;
 
 		var chicken = Utilities.CreateEntityByName<CChicken>("chicken");
 		if (chicken == null || !chicken.IsValid)
 		{
 			Logger.LogWarning("Could not create a chicken entity for {Player}'s pet", player.PlayerName);
-			return;
+			return false;
 		}
+
+		_spawnedPetEntities[chicken.EntityHandle.Raw] = 0;
 
 		try
 		{
@@ -628,6 +871,7 @@ public partial class WeaponPaints
 			// No `chicken_model`: it does not choose the model (Spawn loads chicken.vmdl either way) and only widens
 			// Spawn's random colour roll, which the "Skin" input below replaces.
 			var keyValues = new CEntityKeyValues();
+			keyValues.SetString("targetname", PetEntityName);
 			keyValues.SetVector("origin", position.X, position.Y, position.Z);
 			keyValues.SetAngle("angles", angles.X, angles.Y, angles.Z);
 			chicken.DispatchSpawn(keyValues);
@@ -643,12 +887,22 @@ public partial class WeaponPaints
 			AssertPetLeader(chicken, player);
 			chicken.Teleport(position, angles, Vector3.Zero);
 
-			_activePets[player.Slot] = new ActivePet(chicken.EntityHandle.Raw, item.ItemID, player.SteamID, look);
+			var active = new ActivePet(chicken.EntityHandle.Raw, item.ItemID, player.SteamID, look, Server.TickCount);
+			_activePets[player.Slot] = active;
+
+			PetDebug("{Owner}: pet 0x{Handle:x8} spawned ({Why}) - {Model} stage {Stage}, leader 0x{Leader:x8}, " +
+			         "name \"{Name}\"",
+				PetOwnerLabel(player, player.Slot), active.Handle, why, look.Model, look.Stage, chicken.Leader.Raw,
+				chicken.Entity?.Name);
+
+			SyncPetHat(player.Slot, chicken, look);
+			return true;
 		}
 		catch (Exception ex)
 		{
 			Logger.LogWarning("Could not spawn the pet for {Player}: {Reason}", player.PlayerName, ex.Message);
 			KillPetEntity(chicken);
+			return false;
 		}
 	}
 
@@ -680,44 +934,87 @@ public partial class WeaponPaints
 		});
 	}
 
+	/// <summary>
+	/// Stops tracking the slot's pet and kills what is left of it - whatever state the entity is in, as long as the
+	/// handle still points at our chicken - and its hat.
+	/// </summary>
 	private void RemovePlayerPet(int slot)
 	{
+		RemovePetHat(slot);
+		ForgetPetEmotes(slot, keepCooldown: true);
+
 		if (!_activePets.TryRemove(slot, out var active)) return;
-		KillPetEntity(ResolvePet(active));
+
+		var chicken = new CHandle<CChicken>(active.Handle).Value;
+		if (chicken != null && chicken.IsValid && chicken.DesignerName == "chicken" && !IsMarkedForDelete(chicken))
+			KillPetEntity(chicken);
 	}
 
-	private void KillPetEntity(CChicken? chicken)
+	/// <summary>Kills a chicken or a hat of ours: the same deferred Kill the rest of the plugin uses for weapons.</summary>
+	private void KillPetEntity(CEntityInstance? entity)
 	{
-		if (chicken == null || !chicken.IsValid) return;
+		if (entity == null || !entity.IsValid) return;
 
 		try
 		{
-			// The same deferred Kill the rest of the plugin uses for weapons.
-			chicken.AddEntityIOEvent("Kill", chicken, null, "", 0.0f);
+			entity.AddEntityIOEvent("Kill", entity, null, "", 0.0f);
 		}
 		catch (Exception)
 		{
 			try
 			{
-				chicken.Remove();
+				entity.Remove();
 			}
 			catch (Exception ex)
 			{
-				Logger.LogWarning("Could not remove a pet: {Reason}", ex.Message);
+				Logger.LogWarning("Could not remove a pet entity: {Reason}", ex.Message);
 			}
 		}
 	}
 
-	private CChicken? ResolvePet(ActivePet active)
+	/// <summary>
+	/// Queued for removal (the game's round_start pass, a Kill input): the handle resolves until the removal goes
+	/// through a frame later.
+	/// </summary>
+	private static bool IsMarkedForDelete(CEntityInstance entity)
 	{
+		var identity = entity.Entity;
+		return identity != null && (identity.Flags & EntityMarkedForDeleteFlag) != 0;
+	}
+
+	/// <summary>Whether a chicken (or hat) was spawned by this plugin: by name, which survives a reload, or by handle.</summary>
+	private bool IsPluginPetEntity(CEntityInstance entity, string name) =>
+		_spawnedPetEntities.ContainsKey(entity.EntityHandle.Raw) ||
+		string.Equals(entity.Entity?.Name, name, StringComparison.Ordinal);
+
+	private CChicken? ResolvePet(ActivePet active) => ResolvePet(active, out _);
+
+	/// <summary>The tracked chicken, or null (with the reason, for the debug log) when it is gone or going.</summary>
+	private CChicken? ResolvePet(ActivePet active, out string lost)
+	{
+		lost = "";
+
 		// CHandle.Get compares the whole handle, serial number included, so a reused index resolves to null.
 		var chicken = new CHandle<CChicken>(active.Handle).Value;
-		if (chicken == null || !chicken.IsValid || chicken.DesignerName != "chicken") return null;
+		if (chicken == null || !chicken.IsValid || chicken.DesignerName != "chicken")
+		{
+			lost = "the entity no longer exists";
+			return null;
+		}
 
-		// Queued for removal (the game's round_start pass, a Kill input): the handle resolves until the removal goes
-		// through, and a pet kept now would vanish a moment later. Treated as gone, so it is replaced.
-		var identity = chicken.Entity;
-		if (identity != null && (identity.Flags & EntityMarkedForDeleteFlag) != 0) return null;
+		// A pet kept now would vanish a moment later. Treated as gone, so it is replaced.
+		if (IsMarkedForDelete(chicken))
+		{
+			lost = "queued for removal";
+			return null;
+		}
+
+		// Killed but not removed yet. RemovePlayerPet (or SweepStrayPets) kills what is left.
+		if (chicken.LifeState == (byte)LifeState_t.LIFE_DEAD)
+		{
+			lost = $"killed, health {chicken.Health}";
+			return null;
+		}
 
 		// Diagnostic only, for the first server test: says whether the game rewrites the pet item after spawn.
 		var itemId = chicken.AttributeManager.Item.ItemID;
@@ -730,7 +1027,11 @@ public partial class WeaponPaints
 		return chicken;
 	}
 
-	/// <summary>Controllers (as raw handles) that own a chicken this plugin did not spawn.</summary>
+	/// <summary>
+	/// Controllers (as raw handles) that own a live chicken this plugin did not spawn. Every chicken of ours is left
+	/// out, tracked or not (IsPluginPetEntity): one that dropped out of tracking used to count here as a game pet and
+	/// kept its owner from ever getting a pet again.
+	/// </summary>
 	private HashSet<uint> GameSpawnedPetOwners()
 	{
 		var owners = new HashSet<uint>();
@@ -741,12 +1042,94 @@ public partial class WeaponPaints
 		foreach (var chicken in Utilities.FindAllEntitiesByDesignerName<CChicken>("chicken"))
 		{
 			if (!chicken.IsValid || ours.Contains(chicken.EntityHandle.Raw)) continue;
+			if (IsPluginPetEntity(chicken, PetEntityName) || IsMarkedForDelete(chicken)) continue;
+			if (chicken.LifeState == (byte)LifeState_t.LIFE_DEAD) continue;
 
 			var owner = Schema.GetRef<uint>(chicken.Handle, "CChicken", "m_owner");
 			if (owner != 0 && owner != InvalidEntityHandle) owners.Add(owner);
 		}
 
 		return owners;
+	}
+
+	/// <summary>
+	/// Kills every chicken and hat of ours (by name or handle) that nothing tracks any more: a pet replaced while its
+	/// Kill was lost, one left over from a previous plugin instance, a hat whose chicken is gone. Runs every fifth pet
+	/// timer tick. Game thread only.
+	/// </summary>
+	private void SweepStrayPets()
+	{
+		try
+		{
+			var trackedPets = _activePets.Values.Select(active => active.Handle).ToHashSet();
+			foreach (var chicken in Utilities.FindAllEntitiesByDesignerName<CChicken>("chicken"))
+			{
+				if (!chicken.IsValid || trackedPets.Contains(chicken.EntityHandle.Raw) || IsMarkedForDelete(chicken)) continue;
+				if (!IsPluginPetEntity(chicken, PetEntityName)) continue;
+
+				PetDebug("Removing stray pet 0x{Handle:x8} (nothing tracks it)", chicken.EntityHandle.Raw);
+				KillPetEntity(chicken);
+			}
+
+			var trackedHats = _petHats.Values.Select(hat => hat.Handle).ToHashSet();
+			foreach (var prop in Utilities.FindAllEntitiesByDesignerName<CDynamicProp>("prop_dynamic"))
+			{
+				if (!prop.IsValid || trackedHats.Contains(prop.EntityHandle.Raw) || IsMarkedForDelete(prop)) continue;
+				if (!IsPluginPetEntity(prop, PetHatEntityName)) continue;
+
+				PetDebug("Removing stray pet hat 0x{Handle:x8} (nothing tracks it)", prop.EntityHandle.Raw);
+				KillPetEntity(prop);
+			}
+		}
+		catch (Exception ex)
+		{
+			Logger.LogWarning("Pet clean-up pass failed: {Reason}", ex.Message);
+		}
+	}
+
+	/// <summary>
+	/// A chicken of ours was deleted, by us, the game (round_start, a map clean-up) or its own death. Its hat goes at
+	/// once instead of floating for up to a second, and the debug log says it happened.
+	/// </summary>
+	private void OnEntityDeletedPets(CEntityInstance entity)
+	{
+		try
+		{
+			if (_spawnedPetEntities.IsEmpty) return;
+
+			// By handle only: the entity is on its way out, and CounterStrikeSharp's DesignerName reads null for an
+			// entity it no longer counts as valid. A hat of ours matches neither loop below; SyncPetHat puts a
+			// missing hat back while its pet is out.
+			var handle = entity.EntityHandle.Raw;
+			if (!_spawnedPetEntities.TryRemove(handle, out _)) return;
+
+			foreach (var (slot, hat) in _petHats)
+			{
+				if (hat.PetHandle != handle) continue;
+
+				// Next frame, so no entity is touched inside the entity system's own delete callback - and only this
+				// hat, not one a new pet of the same slot may have got by then.
+				var gone = hat;
+				Server.NextFrame(() =>
+				{
+					if (_petHats.TryRemove(new KeyValuePair<int, ActivePetHat>(slot, gone)))
+						KillPetEntity(ResolvePetHat(gone));
+				});
+			}
+
+			foreach (var (slot, active) in _activePets)
+			{
+				if (active.Handle != handle) continue;
+
+				_activePets.TryRemove(new KeyValuePair<int, ActivePet>(slot, active));
+				PetDebug("Pet 0x{Handle:x8} of {Owner} was deleted - it comes back on their next spawn", handle,
+					PetOwnerLabel(Utilities.GetPlayerFromSlot(slot), slot));
+			}
+		}
+		catch (Exception)
+		{
+			// Never let the entity system's callback throw.
+		}
 	}
 
 	/// <summary>Behind the player, on the floor they stand on, facing the way they face.</summary>
@@ -907,6 +1290,9 @@ public partial class WeaponPaints
 				OnCommandPet(player, info);
 			});
 		});
+
+		SetupPetHatCommands();
+		SetupPetEmoteCommands();
 	}
 
 	/// <summary>
@@ -1051,7 +1437,9 @@ public partial class WeaponPaints
 				// over: it is an index into one model's own groups.
 				Seed = samePet ? current!.Seed : RandomPetSeed(),
 				Variant = samePet ? current!.Variant : RandomPetVariant(pet),
-				Name = current?.Name
+				Name = current?.Name,
+				// The hat stays on through a change of pet, like the name.
+				Hat = current?.Hat
 			};
 
 			GPlayersPet[slot] = next;
@@ -1209,7 +1597,7 @@ public partial class WeaponPaints
 	/// </summary>
 	private void ShowPetChange(CCSPlayerController player)
 	{
-		if (_gBCommandsAllowed || !GPlayersPet.ContainsKey(player.Slot)) SpawnPlayerPet(player);
+		if (_gBCommandsAllowed || !GPlayersPet.ContainsKey(player.Slot)) SpawnPlayerPet(player, "!pet change");
 	}
 
 	private void SavePet(CCSPlayerController player, PetInfo? pet)
@@ -1229,7 +1617,10 @@ public partial class WeaponPaints
 		// A copy: the worker must not see this object change under it.
 		var snapshot = pet == null
 			? null
-			: new PetInfo { PetId = pet.PetId, Stage = pet.Stage, Variant = pet.Variant, Seed = pet.Seed, Name = pet.Name };
+			: new PetInfo
+			{
+				PetId = pet.PetId, Stage = pet.Stage, Variant = pet.Variant, Seed = pet.Seed, Name = pet.Name, Hat = pet.Hat
+			};
 
 		_ = Task.Run(async () => await WeaponSync.SyncPetToDatabase(playerInfo, snapshot));
 	}

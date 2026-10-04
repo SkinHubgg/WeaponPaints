@@ -473,5 +473,40 @@
         "id": "96",
         "name": "音乐盒 | Tigercub - 腐朽香氛",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-96.png"
+    },
+    {
+        "id": "98",
+        "name": "音乐盒 | ALRT, 多巴胺冲击",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-98.png"
+    },
+    {
+        "id": "99",
+        "name": "音乐盒 | Altare, 吾心不移",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-99.png"
+    },
+    {
+        "id": "100",
+        "name": "音乐盒 | borne, 给我",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-100.png"
+    },
+    {
+        "id": "101",
+        "name": "音乐盒 | Pirapus, 每夜",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-101.png"
+    },
+    {
+        "id": "102",
+        "name": "音乐盒 | Repiet & Julia Kleijn, 循环不息",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-102.png"
+    },
+    {
+        "id": "103",
+        "name": "音乐盒 | ShockOne, 声流",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-103.png"
+    },
+    {
+        "id": "104",
+        "name": "音乐盒 | Starjunk 95，工业忆夕",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-104.png"
     }
 ]

@@ -473,5 +473,40 @@
         "id": "96",
         "name": "ชุดอุปกรณ์เพลง | Tigercub, The Perfume of Decay",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-96.png"
+    },
+    {
+        "id": "98",
+        "name": "ชุดอุปกรณ์เพลง | ALRT, DOPAMINE HIT",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-98.png"
+    },
+    {
+        "id": "99",
+        "name": "ชุดอุปกรณ์เพลง | Altare, Change My Mind",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-99.png"
+    },
+    {
+        "id": "100",
+        "name": "ชุดอุปกรณ์เพลง | borne, Give It To Me",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-100.png"
+    },
+    {
+        "id": "101",
+        "name": "ชุดอุปกรณ์เพลง | Pirapus, EVERYNITE",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-101.png"
+    },
+    {
+        "id": "102",
+        "name": "ชุดอุปกรณ์เพลง | Repiet & Julia Kleijn, On And On",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-102.png"
+    },
+    {
+        "id": "103",
+        "name": "ชุดอุปกรณ์เพลง | ShockOne, Voices",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-103.png"
+    },
+    {
+        "id": "104",
+        "name": "ชุดอุปกรณ์เพลง | Starjunk 95, Industrial Sunset Memories",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/music_kit-104.png"
     }
 ]

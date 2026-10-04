@@ -10,14 +10,6 @@
     {
         "weapon_defindex": 7,
         "weapon_name": "weapon_ak47",
-        "paint": "1466",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_ak47-1466.png",
-        "paint_name": "AK-47 | Consequence of the Jinn",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 7,
-        "weapon_name": "weapon_ak47",
         "paint": "1449",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_ak47-1449.png",
         "paint_name": "AK-47 | AUTOEXEC",
@@ -28,7 +20,7 @@
         "weapon_name": "weapon_ak47",
         "paint": "1425",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_ak47-1425.png",
-        "paint_name": "AK-47 | Crane Flight",
+        "paint_name": "AK-47 | Kurjenlento",
         "legacy_model": false
     },
     {
@@ -37,6 +29,14 @@
         "paint": "1207",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_ak47-1207.png",
         "paint_name": "AK-47 | Vihan kyllästämä",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 7,
+        "weapon_name": "weapon_ak47",
+        "paint": "1466",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_ak47-1466.png",
+        "paint_name": "AK-47 | Džinni ajatuksistasi",
         "legacy_model": false
     },
     {
@@ -372,7 +372,7 @@
         "weapon_name": "weapon_ak47",
         "paint": "1397",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_ak47-1397.png",
-        "paint_name": "AK-47 | Aphrodite",
+        "paint_name": "AK-47 | Afrodite",
         "legacy_model": false
     },
     {
@@ -444,7 +444,7 @@
         "weapon_name": "weapon_ak47",
         "paint": "1358",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_ak47-1358.png",
-        "paint_name": "AK-47 | Breakthrough",
+        "paint_name": "AK-47 | Läpimurto",
         "legacy_model": false
     },
     {
@@ -501,22 +501,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_aug.png",
         "paint_name": "AUG  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 8,
-        "weapon_name": "weapon_aug",
-        "paint": "1464",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_aug-1464.png",
-        "paint_name": "AUG | Lapis Lazuli",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 8,
-        "weapon_name": "weapon_aug",
-        "paint": "1452",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_aug-1452.png",
-        "paint_name": "AUG | Signal Scanner",
         "legacy_model": false
     },
     {
@@ -605,6 +589,22 @@
         "paint": "1198",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_aug-1198.png",
         "paint_name": "AUG | Teräksenluja",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 8,
+        "weapon_name": "weapon_aug",
+        "paint": "1452",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_aug-1452.png",
+        "paint_name": "AUG | Signaaliskanneri",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 8,
+        "weapon_name": "weapon_aug",
+        "paint": "1464",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_aug-1464.png",
+        "paint_name": "AUG | Lapislatsuli",
         "legacy_model": false
     },
     {
@@ -836,7 +836,7 @@
         "weapon_name": "weapon_aug",
         "paint": "1362",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_aug-1362.png",
-        "paint_name": "AUG | Creep",
+        "paint_name": "AUG | Köynnös",
         "legacy_model": false
     },
     {
@@ -877,30 +877,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_awp.png",
         "paint_name": "AWP  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 9,
-        "weapon_name": "weapon_awp",
-        "paint": "1465",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_awp-1465.png",
-        "paint_name": "AWP | Sovereign Flame",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 9,
-        "weapon_name": "weapon_awp",
-        "paint": "1467",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_awp-1467.png",
-        "paint_name": "AWP | Black Box",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 9,
-        "weapon_name": "weapon_awp",
-        "paint": "1422",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_awp-1422.png",
-        "paint_name": "AWP | Queen's Gambit",
         "legacy_model": false
     },
     {
@@ -962,6 +938,14 @@
     {
         "weapon_defindex": 9,
         "weapon_name": "weapon_awp",
+        "paint": "1467",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_awp-1467.png",
+        "paint_name": "AWP | Musta laatikko",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 9,
+        "weapon_name": "weapon_awp",
         "paint": "1346",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_awp-1346.png",
         "paint_name": "AWP | Jäähiiltynyt",
@@ -981,6 +965,22 @@
         "paint": "1206",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_awp-1206.png",
         "paint_name": "AWP | Printstream",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 9,
+        "weapon_name": "weapon_awp",
+        "paint": "1422",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_awp-1422.png",
+        "paint_name": "AWP | Musta kuningatar",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 9,
+        "weapon_name": "weapon_awp",
+        "paint": "1465",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_awp-1465.png",
+        "paint_name": "AWP | Luotettava liekki",
         "legacy_model": false
     },
     {
@@ -1268,7 +1268,7 @@
         "weapon_name": "weapon_awp",
         "paint": "1378",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_awp-1378.png",
-        "paint_name": "AWP | Exothermic",
+        "paint_name": "AWP | Vaihtolämpö",
         "legacy_model": false
     },
     {
@@ -1276,7 +1276,7 @@
         "weapon_name": "weapon_awp",
         "paint": "1356",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_awp-1356.png",
-        "paint_name": "AWP | The End",
+        "paint_name": "AWP | Sen pituinen se",
         "legacy_model": false
     },
     {
@@ -1586,22 +1586,6 @@
     {
         "weapon_defindex": 26,
         "weapon_name": "weapon_bizon",
-        "paint": "1472",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_bizon-1472.png",
-        "paint_name": "PP-Bizon | Traitor",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 26,
-        "weapon_name": "weapon_bizon",
-        "paint": "1418",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_bizon-1418.png",
-        "paint_name": "PP-Bizon | RMX",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 26,
-        "weapon_name": "weapon_bizon",
         "paint": "1083",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_bizon-1083.png",
         "paint_name": "PP-Bizon | Sulaketaulu",
@@ -1642,6 +1626,22 @@
     {
         "weapon_defindex": 26,
         "weapon_name": "weapon_bizon",
+        "paint": "1418",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_bizon-1418.png",
+        "paint_name": "PP-Bizon | RMX",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 26,
+        "weapon_name": "weapon_bizon",
+        "paint": "1472",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_bizon-1472.png",
+        "paint_name": "PP-Bizon | Petturi",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 26,
+        "weapon_name": "weapon_bizon",
         "paint": "349",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_bizon-349.png",
         "paint_name": "PP-Bizon | Osiris",
@@ -1677,7 +1677,7 @@
         "paint": "542",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_bizon-542.png",
         "paint_name": "PP-Bizon | Anubiksen armahdus",
-        "legacy_model": false
+        "legacy_model": true
     },
     {
         "weapon_defindex": 26,
@@ -1828,7 +1828,7 @@
         "weapon_name": "weapon_bizon",
         "paint": "1392",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_bizon-1392.png",
-        "paint_name": "PP-Bizon | Thermal Currents",
+        "paint_name": "PP-Bizon | Lämmin ilmavirtaus",
         "legacy_model": false
     },
     {
@@ -1901,14 +1901,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_cz75a.png",
         "paint_name": "CZ75-Auto  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 63,
-        "weapon_name": "weapon_cz75a",
-        "paint": "1443",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_cz75a-1443.png",
-        "paint_name": "CZ75-Auto | Hydraulics",
         "legacy_model": false
     },
     {
@@ -2066,6 +2058,14 @@
     {
         "weapon_defindex": 63,
         "weapon_name": "weapon_cz75a",
+        "paint": "1443",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_cz75a-1443.png",
+        "paint_name": "CZ75-Auto | Hydraulinen helahoito",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 63,
+        "weapon_name": "weapon_cz75a",
         "paint": "687",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_cz75a-687.png",
         "paint_name": "CZ75-Auto | Taktikatti",
@@ -2148,7 +2148,7 @@
         "weapon_name": "weapon_cz75a",
         "paint": "1390",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_cz75a-1390.png",
-        "paint_name": "CZ75-Auto | Honey Paisley",
+        "paint_name": "CZ75-Auto | Kultainen kasmir",
         "legacy_model": false
     },
     {
@@ -2205,22 +2205,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_deagle.png",
         "paint_name": "Desert Eagle  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 1,
-        "weapon_name": "weapon_deagle",
-        "paint": "1458",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_deagle-1458.png",
-        "paint_name": "Desert Eagle | Eastern Enigma",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 1,
-        "weapon_name": "weapon_deagle",
-        "paint": "1430",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_deagle-1430.png",
-        "paint_name": "Desert Eagle | Firebreathing",
         "legacy_model": false
     },
     {
@@ -2458,6 +2442,22 @@
     {
         "weapon_defindex": 1,
         "weapon_name": "weapon_deagle",
+        "paint": "1458",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_deagle-1458.png",
+        "paint_name": "Desert Eagle | Idän ihme",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 1,
+        "weapon_name": "weapon_deagle",
+        "paint": "1430",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_deagle-1430.png",
+        "paint_name": "Desert Eagle | Tulenhönkäys",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 1,
+        "weapon_name": "weapon_deagle",
         "paint": "1189",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_deagle-1189.png",
         "paint_name": "Desert Eagle | Käärme luo nahkaansa",
@@ -2540,7 +2540,7 @@
         "weapon_name": "weapon_deagle",
         "paint": "1360",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_deagle-1360.png",
-        "paint_name": "Desert Eagle | The Daily Deagle",
+        "paint_name": "Desert Eagle | Deaglen Sanomat",
         "legacy_model": false
     },
     {
@@ -2573,14 +2573,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_elite.png",
         "paint_name": "Tupla-Berettat  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 2,
-        "weapon_name": "weapon_elite",
-        "paint": "1459",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_elite-1459.png",
-        "paint_name": "Dual Berettas | Mystic Conjunction",
         "legacy_model": false
     },
     {
@@ -2725,6 +2717,14 @@
         "paint": "112",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_elite-112.png",
         "paint_name": "Tupla-Berettat | Vesipyssyt",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 2,
+        "weapon_name": "weapon_elite",
+        "paint": "1459",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_elite-1459.png",
+        "paint_name": "Tupla-Berettat | Yllättävä yhteys",
         "legacy_model": false
     },
     {
@@ -2884,7 +2884,7 @@
         "weapon_name": "weapon_elite",
         "paint": "1373",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_elite-1373.png",
-        "paint_name": "Tupla-Berettat | Silver Pour",
+        "paint_name": "Tupla-Berettat | Hopeavalu",
         "legacy_model": false
     },
     {
@@ -2925,22 +2925,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_famas.png",
         "paint_name": "FAMAS  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 10,
-        "weapon_name": "weapon_famas",
-        "paint": "1461",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_famas-1461.png",
-        "paint_name": "FAMAS | Snake Song",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 10,
-        "weapon_name": "weapon_famas",
-        "paint": "1477",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_famas-1477.png",
-        "paint_name": "FAMAS | Corp Defense",
         "legacy_model": false
     },
     {
@@ -3082,6 +3066,22 @@
     {
         "weapon_defindex": 10,
         "weapon_name": "weapon_famas",
+        "paint": "1477",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_famas-1477.png",
+        "paint_name": "FAMAS | Pätevä puolustus",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 10,
+        "weapon_name": "weapon_famas",
+        "paint": "1461",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_famas-1461.png",
+        "paint_name": "FAMAS | Kärmeksen laulu",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 10,
+        "weapon_name": "weapon_famas",
         "paint": "1146",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_famas-1146.png",
         "paint_name": "FAMAS | Meow 36",
@@ -3180,7 +3180,7 @@
         "weapon_name": "weapon_famas",
         "paint": "1393",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_famas-1393.png",
-        "paint_name": "FAMAS | Byproduct",
+        "paint_name": "FAMAS | Oheistuote",
         "legacy_model": false
     },
     {
@@ -3285,22 +3285,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_fiveseven.png",
         "paint_name": "Five-SeveN  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 3,
-        "weapon_name": "weapon_fiveseven",
-        "paint": "1457",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_fiveseven-1457.png",
-        "paint_name": "Five-SeveN | Desert Seal",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 3,
-        "weapon_name": "weapon_fiveseven",
-        "paint": "1429",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_fiveseven-1429.png",
-        "paint_name": "Five-SeveN | Dark Polymer",
         "legacy_model": false
     },
     {
@@ -3466,9 +3450,25 @@
     {
         "weapon_defindex": 3,
         "weapon_name": "weapon_fiveseven",
+        "paint": "1457",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_fiveseven-1457.png",
+        "paint_name": "Five-SeveN | Aavikkosoturi",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 3,
+        "weapon_name": "weapon_fiveseven",
         "paint": "1168",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_fiveseven-1168.png",
         "paint_name": "Five-SeveN | Hybridi",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 3,
+        "weapon_name": "weapon_fiveseven",
+        "paint": "1429",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_fiveseven-1429.png",
+        "paint_name": "Five-SeveN | Tumma polymeeri",
         "legacy_model": false
     },
     {
@@ -3596,7 +3596,7 @@
         "weapon_name": "weapon_fiveseven",
         "paint": "1380",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_fiveseven-1380.png",
-        "paint_name": "Five-SeveN | Fraise Crane",
+        "paint_name": "Five-SeveN | Kurjenlento",
         "legacy_model": false
     },
     {
@@ -3882,14 +3882,6 @@
     {
         "weapon_defindex": 13,
         "weapon_name": "weapon_galilar",
-        "paint": "1434",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_galilar-1434.png",
-        "paint_name": "Galil AR | Galigator",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 13,
-        "weapon_name": "weapon_galilar",
         "paint": "246",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_galilar-246.png",
         "paint_name": "Galil AR | Himmeä meripihka",
@@ -4010,6 +4002,14 @@
     {
         "weapon_defindex": 13,
         "weapon_name": "weapon_galilar",
+        "paint": "1434",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_galilar-1434.png",
+        "paint_name": "Galil AR | Galigaattori",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 13,
+        "weapon_name": "weapon_galilar",
         "paint": "494",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_galilar-494.png",
         "paint_name": "Galil AR | Kylmä kuin kivi",
@@ -4116,7 +4116,7 @@
         "weapon_name": "weapon_galilar",
         "paint": "1383",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_galilar-1383.png",
-        "paint_name": "Galil AR | Sky Mandala",
+        "paint_name": "Galil AR | Taivainen mandala",
         "legacy_model": false
     },
     {
@@ -4237,30 +4237,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_glock.png",
         "paint_name": "Glock-18  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 4,
-        "weapon_name": "weapon_glock",
-        "paint": "1460",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_glock-1460.png",
-        "paint_name": "Glock-18 | Ifrit Lattice",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 4,
-        "weapon_name": "weapon_glock",
-        "paint": "1450",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_glock-1450.png",
-        "paint_name": "Glock-18 | Ghost Protocol",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 4,
-        "weapon_name": "weapon_glock",
-        "paint": "1421",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_glock-1421.png",
-        "paint_name": "Glock-18 | Fully Tuned",
         "legacy_model": false
     },
     {
@@ -4530,6 +4506,30 @@
     {
         "weapon_defindex": 4,
         "weapon_name": "weapon_glock",
+        "paint": "1450",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_glock-1450.png",
+        "paint_name": "Glock-18 | Haamuprotokolla",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 4,
+        "weapon_name": "weapon_glock",
+        "paint": "1460",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_glock-1460.png",
+        "paint_name": "Glock-18 | Ifritin ristikko",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 4,
+        "weapon_name": "weapon_glock",
+        "paint": "1421",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_glock-1421.png",
+        "paint_name": "Glock-18 | Täysin tuunattu",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 4,
+        "weapon_name": "weapon_glock",
         "paint": "1348",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_glock-1348.png",
         "paint_name": "Glock-18 | Peilimosaiikki",
@@ -4604,7 +4604,7 @@
         "weapon_name": "weapon_glock",
         "paint": "1357",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_glock-1357.png",
-        "paint_name": "Glock-18 | Trace Lock",
+        "paint_name": "Glock-18 | Tutkassa",
         "legacy_model": false
     },
     {
@@ -4972,7 +4972,7 @@
         "weapon_name": "weapon_hkp2000",
         "paint": "1359",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_hkp2000-1359.png",
-        "paint_name": "P2000 | Grip Tape",
+        "paint_name": "P2000 | Teippisankari",
         "legacy_model": false
     },
     {
@@ -9346,14 +9346,6 @@
     {
         "weapon_defindex": 14,
         "weapon_name": "weapon_m249",
-        "paint": "1435",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m249-1435.png",
-        "paint_name": "M249 | Bock Blocks",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 14,
-        "weapon_name": "weapon_m249",
         "paint": "902",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m249-902.png",
         "paint_name": "M249 | Aztec",
@@ -9468,7 +9460,7 @@
         "weapon_name": "weapon_m249",
         "paint": "1370",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m249-1370.png",
-        "paint_name": "M249 | Sleet",
+        "paint_name": "M249 | Räntäkeli",
         "legacy_model": false
     },
     {
@@ -9477,6 +9469,14 @@
         "paint": "1298",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m249-1298.png",
         "paint_name": "M249 | Salviakuvio",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 14,
+        "weapon_name": "weapon_m249",
+        "paint": "1435",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m249-1435.png",
+        "paint_name": "M249 | Bock Blocks",
         "legacy_model": false
     },
     {
@@ -9557,30 +9557,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1.png",
         "paint_name": "M4A4  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 16,
-        "weapon_name": "weapon_m4a1",
-        "paint": "1463",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1-1463.png",
-        "paint_name": "M4A4 | Falak",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 16,
-        "weapon_name": "weapon_m4a1",
-        "paint": "1446",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1-1446.png",
-        "paint_name": "M4A4 | Dark Operative",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 16,
-        "weapon_name": "weapon_m4a1",
-        "paint": "1432",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1-1432.png",
-        "paint_name": "M4A4 | Zubastick",
         "legacy_model": false
     },
     {
@@ -9876,7 +9852,7 @@
         "weapon_name": "weapon_m4a1",
         "paint": "1364",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1-1364.png",
-        "paint_name": "M4A4 | Aeolian Dark",
+        "paint_name": "M4A4 | Tumma aiolialainen",
         "legacy_model": false
     },
     {
@@ -9885,6 +9861,22 @@
         "paint": "1266",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1-1266.png",
         "paint_name": "M4A4 | Laivaston rippeet",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 16,
+        "weapon_name": "weapon_m4a1",
+        "paint": "1446",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1-1446.png",
+        "paint_name": "M4A4 | Varjojen mailla",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 16,
+        "weapon_name": "weapon_m4a1",
+        "paint": "1463",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1-1463.png",
+        "paint_name": "M4A4 | Falak",
         "legacy_model": false
     },
     {
@@ -9920,27 +9912,19 @@
         "legacy_model": false
     },
     {
+        "weapon_defindex": 16,
+        "weapon_name": "weapon_m4a1",
+        "paint": "1432",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1-1432.png",
+        "paint_name": "M4A4 | Zubastick",
+        "legacy_model": false
+    },
+    {
         "weapon_defindex": 60,
         "weapon_name": "weapon_m4a1_silencer",
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1_silencer.png",
         "paint_name": "M4A1-S  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 60,
-        "weapon_name": "weapon_m4a1_silencer",
-        "paint": "1476",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1_silencer-1476.png",
-        "paint_name": "M4A1-S | Fatal Glitch",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 60,
-        "weapon_name": "weapon_m4a1_silencer",
-        "paint": "1433",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1_silencer-1433.png",
-        "paint_name": "M4A1-S | Electrum",
         "legacy_model": false
     },
     {
@@ -10244,7 +10228,15 @@
         "weapon_name": "weapon_m4a1_silencer",
         "paint": "1376",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1_silencer-1376.png",
-        "paint_name": "M4A1-S | Party Animal",
+        "paint_name": "M4A1-S | Himobilettäjä",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 60,
+        "weapon_name": "weapon_m4a1_silencer",
+        "paint": "1476",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1_silencer-1476.png",
+        "paint_name": "M4A1-S | Kohtalokas katkos",
         "legacy_model": false
     },
     {
@@ -10253,6 +10245,14 @@
         "paint": "1166",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1_silencer-1166.png",
         "paint_name": "M4A1-S | Musta lootus",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 60,
+        "weapon_name": "weapon_m4a1_silencer",
+        "paint": "1433",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_m4a1_silencer-1433.png",
+        "paint_name": "M4A1-S | Electrum",
         "legacy_model": false
     },
     {
@@ -10357,22 +10357,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mac10.png",
         "paint_name": "MAC-10  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 17,
-        "weapon_name": "weapon_mac10",
-        "paint": "1454",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mac10-1454.png",
-        "paint_name": "MAC-10 | Arabesque Mosaic",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 17,
-        "weapon_name": "weapon_mac10",
-        "paint": "1448",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mac10-1448.png",
-        "paint_name": "MAC-10 | Video Cam",
         "legacy_model": false
     },
     {
@@ -10692,7 +10676,7 @@
         "weapon_name": "weapon_mac10",
         "paint": "1367",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mac10-1367.png",
-        "paint_name": "MAC-10 | Snow Splash",
+        "paint_name": "MAC-10 | Lunta tupaan",
         "legacy_model": false
     },
     {
@@ -10709,6 +10693,14 @@
         "paint": "1285",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mac10-1285.png",
         "paint_name": "MAC-10 | Poppelipöheikkö",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 17,
+        "weapon_name": "weapon_mac10",
+        "paint": "1454",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mac10-1454.png",
+        "paint_name": "MAC-10 | Itämainen mosaiikki",
         "legacy_model": false
     },
     {
@@ -10741,6 +10733,14 @@
         "paint": "1204",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mac10-1204.png",
         "paint_name": "MAC-10 | Suistuva juna",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 17,
+        "weapon_name": "weapon_mac10",
+        "paint": "1448",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mac10-1448.png",
+        "paint_name": "MAC-10 | Wanha kamera",
         "legacy_model": false
     },
     {
@@ -11260,7 +11260,7 @@
         "weapon_name": "weapon_mp5sd",
         "paint": "1366",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp5sd-1366.png",
-        "paint_name": "MP5-SD | Snow Splash",
+        "paint_name": "MP5-SD | Lunta tupaan",
         "legacy_model": false
     },
     {
@@ -11325,22 +11325,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp7.png",
         "paint_name": "MP7  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 33,
-        "weapon_name": "weapon_mp7",
-        "paint": "1468",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp7-1468.png",
-        "paint_name": "MP7 | Base-2",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 33,
-        "weapon_name": "weapon_mp7",
-        "paint": "1436",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp7-1436.png",
-        "paint_name": "MP7 | Amberline",
         "legacy_model": false
     },
     {
@@ -11540,7 +11524,23 @@
         "weapon_name": "weapon_mp7",
         "paint": "1386",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp7-1386.png",
-        "paint_name": "MP7 | Coral Paisley",
+        "paint_name": "MP7 | Korallinvärinen paisley",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 33,
+        "weapon_name": "weapon_mp7",
+        "paint": "1436",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp7-1436.png",
+        "paint_name": "MP7 | Kullan kajo",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 33,
+        "weapon_name": "weapon_mp7",
+        "paint": "1468",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp7-1468.png",
+        "paint_name": "MP7 | Base-2",
         "legacy_model": false
     },
     {
@@ -11653,30 +11653,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp9.png",
         "paint_name": "MP9  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 34,
-        "weapon_name": "weapon_mp9",
-        "paint": "1473",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp9-1473.png",
-        "paint_name": "MP9 | Dune Asp",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 34,
-        "weapon_name": "weapon_mp9",
-        "paint": "1469",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp9-1469.png",
-        "paint_name": "MP9 | Spy Prototype",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 34,
-        "weapon_name": "weapon_mp9",
-        "paint": "1423",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp9-1423.png",
-        "paint_name": "MP9 | Urban Sovereign",
         "legacy_model": false
     },
     {
@@ -11946,9 +11922,33 @@
     {
         "weapon_defindex": 34,
         "weapon_name": "weapon_mp9",
+        "paint": "1473",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp9-1473.png",
+        "paint_name": "MP9 | Hiekkakäärme",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 34,
+        "weapon_name": "weapon_mp9",
         "paint": "1193",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp9-1193.png",
         "paint_name": "MP9 | Nexus",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 34,
+        "weapon_name": "weapon_mp9",
+        "paint": "1469",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp9-1469.png",
+        "paint_name": "MP9 | Vakoojan prototyyppi",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 34,
+        "weapon_name": "weapon_mp9",
+        "paint": "1423",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp9-1423.png",
+        "paint_name": "MP9 | Urbaani kingi",
         "legacy_model": false
     },
     {
@@ -11996,7 +11996,7 @@
         "weapon_name": "weapon_mp9",
         "paint": "1388",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_mp9-1388.png",
-        "paint_name": "MP9 | Bee-Tron",
+        "paint_name": "MP9 | Metallimehiläinen",
         "legacy_model": false
     },
     {
@@ -12250,22 +12250,6 @@
     {
         "weapon_defindex": 35,
         "weapon_name": "weapon_nova",
-        "paint": "1474",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_nova-1474.png",
-        "paint_name": "Nova | Morning Sun",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 35,
-        "weapon_name": "weapon_nova",
-        "paint": "1442",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_nova-1442.png",
-        "paint_name": "Nova | Smart Gun",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 35,
-        "weapon_name": "weapon_nova",
         "paint": "298",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_nova-298.png",
         "paint_name": "Nova | Armeijakiilto",
@@ -12508,7 +12492,7 @@
         "weapon_name": "weapon_nova",
         "paint": "1368",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_nova-1368.png",
-        "paint_name": "Nova | Currents",
+        "paint_name": "Nova | Virran vietävänä",
         "legacy_model": false
     },
     {
@@ -12517,6 +12501,14 @@
         "paint": "1162",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_nova-1162.png",
         "paint_name": "Nova | Dark Sigil",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 35,
+        "weapon_name": "weapon_nova",
+        "paint": "1474",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_nova-1474.png",
+        "paint_name": "Nova | Aamunkoi",
         "legacy_model": false
     },
     {
@@ -12533,6 +12525,14 @@
         "paint": "1192",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_nova-1192.png",
         "paint_name": "Nova | Nousevan auringon maa",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 35,
+        "weapon_name": "weapon_nova",
+        "paint": "1442",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_nova-1442.png",
+        "paint_name": "Nova | Älykäs tussari",
         "legacy_model": false
     },
     {
@@ -12629,22 +12629,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_p250.png",
         "paint_name": "P250  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 36,
-        "weapon_name": "weapon_p250",
-        "paint": "1455",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_p250-1455.png",
-        "paint_name": "P250 | Lotus Imprint",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 36,
-        "weapon_name": "weapon_p250",
-        "paint": "1420",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_p250-1420.png",
-        "paint_name": "P250 | Kintsugi",
         "legacy_model": false
     },
     {
@@ -12980,7 +12964,7 @@
         "weapon_name": "weapon_p250",
         "paint": "1369",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_p250-1369.png",
-        "paint_name": "P250 | Sleet",
+        "paint_name": "P250 | Räntäkeli",
         "legacy_model": false
     },
     {
@@ -13005,6 +12989,22 @@
         "paint": "130",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_p250-130.png",
         "paint_name": "P250 | Episentrumi",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 36,
+        "weapon_name": "weapon_p250",
+        "paint": "1420",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_p250-1420.png",
+        "paint_name": "P250 | Kintsugi",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 36,
+        "weapon_name": "weapon_p250",
+        "paint": "1455",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_p250-1455.png",
+        "paint_name": "P250 | Lootuskuosi",
         "legacy_model": false
     },
     {
@@ -13101,14 +13101,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_p90.png",
         "paint_name": "P90  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 19,
-        "weapon_name": "weapon_p90",
-        "paint": "1419",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_p90-1419.png",
-        "paint_name": "P90 | Deathgaze",
         "legacy_model": false
     },
     {
@@ -13396,7 +13388,7 @@
         "weapon_name": "weapon_p90",
         "paint": "1361",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_p90-1361.png",
-        "paint_name": "P90 | Aeolian Light",
+        "paint_name": "P90 | Vaalea aiolialainen",
         "legacy_model": false
     },
     {
@@ -13421,6 +13413,14 @@
         "paint": "1190",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_p90-1190.png",
         "paint_name": "P90 | Aallonmurtaja",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 19,
+        "weapon_name": "weapon_p90",
+        "paint": "1419",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_p90-1419.png",
+        "paint_name": "P90 | Kalmankatse",
         "legacy_model": false
     },
     {
@@ -13525,14 +13525,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_revolver.png",
         "paint_name": "R8-revolveri  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 64,
-        "weapon_name": "weapon_revolver",
-        "paint": "1445",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_revolver-1445.png",
-        "paint_name": "R8 Revolver | Monarch",
         "legacy_model": false
     },
     {
@@ -13682,6 +13674,14 @@
     {
         "weapon_defindex": 64,
         "weapon_name": "weapon_revolver",
+        "paint": "1445",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_revolver-1445.png",
+        "paint_name": "R8-revolveri | Monarkki",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 64,
+        "weapon_name": "weapon_revolver",
         "paint": "123",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_revolver-123.png",
         "paint_name": "R8-revolveri | Tango",
@@ -13708,7 +13708,7 @@
         "weapon_name": "weapon_revolver",
         "paint": "1389",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_revolver-1389.png",
-        "paint_name": "R8-revolveri | Mauve Aside",
+        "paint_name": "R8-revolveri | Malvasta viis",
         "legacy_model": false
     },
     {
@@ -13724,7 +13724,7 @@
         "weapon_name": "weapon_revolver",
         "paint": "1363",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_revolver-1363.png",
-        "paint_name": "R8-revolveri | Dark Chamber",
+        "paint_name": "R8-revolveri | Pimeä kammio",
         "legacy_model": false
     },
     {
@@ -13749,22 +13749,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_sawedoff.png",
         "paint_name": "Katkaistu haulikko  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 29,
-        "weapon_name": "weapon_sawedoff",
-        "paint": "1475",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_sawedoff-1475.png",
-        "paint_name": "Sawed-Off | Lunar Wyrm",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 29,
-        "weapon_name": "weapon_sawedoff",
-        "paint": "1427",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_sawedoff-1427.png",
-        "paint_name": "Sawed-Off | Fusion",
         "legacy_model": false
     },
     {
@@ -13996,7 +13980,15 @@
         "weapon_name": "weapon_sawedoff",
         "paint": "1391",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_sawedoff-1391.png",
-        "paint_name": "Katkaistu haulikko | Crimson Batik",
+        "paint_name": "Katkaistu haulikko | Karmiinikuvio",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 29,
+        "weapon_name": "weapon_sawedoff",
+        "paint": "1427",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_sawedoff-1427.png",
+        "paint_name": "Katkaistu haulikko | Fuusio",
         "legacy_model": false
     },
     {
@@ -14005,6 +13997,14 @@
         "paint": "1160",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_sawedoff-1160.png",
         "paint_name": "Katkaistu haulikko | Analog Input",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 29,
+        "weapon_name": "weapon_sawedoff",
+        "paint": "1475",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_sawedoff-1475.png",
+        "paint_name": "Katkaistu haulikko | Käärmeennahka",
         "legacy_model": false
     },
     {
@@ -14045,22 +14045,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_scar20.png",
         "paint_name": "SCAR-20  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 38,
-        "weapon_name": "weapon_scar20",
-        "paint": "1453",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_scar20-1453.png",
-        "paint_name": "SCAR-20 | Sirocco Script",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 38,
-        "weapon_name": "weapon_scar20",
-        "paint": "1470",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_scar20-1470.png",
-        "paint_name": "SCAR-20 | Arctic Camo Panels",
         "legacy_model": false
     },
     {
@@ -14236,7 +14220,7 @@
         "weapon_name": "weapon_scar20",
         "paint": "1371",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_scar20-1371.png",
-        "paint_name": "SCAR-20 | Zinc",
+        "paint_name": "SCAR-20 | Sinkki",
         "legacy_model": false
     },
     {
@@ -14250,9 +14234,25 @@
     {
         "weapon_defindex": 38,
         "weapon_name": "weapon_scar20",
+        "paint": "1470",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_scar20-1470.png",
+        "paint_name": "SCAR-20 | Arktinen alusta",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 38,
+        "weapon_name": "weapon_scar20",
         "paint": "1343",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_scar20-1343.png",
         "paint_name": "SCAR-20 | Häkkilintu",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 38,
+        "weapon_name": "weapon_scar20",
+        "paint": "1453",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_scar20-1453.png",
+        "paint_name": "SCAR-20 | Širokko-kirjoitus",
         "legacy_model": false
     },
     {
@@ -14524,7 +14524,7 @@
         "weapon_name": "weapon_sg556",
         "paint": "1394",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_sg556-1394.png",
-        "paint_name": "SG 553 | Safari Print",
+        "paint_name": "SG 553 | Safarikuvio",
         "legacy_model": false
     },
     {
@@ -14804,7 +14804,7 @@
         "weapon_name": "weapon_ssg08",
         "paint": "1379",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_ssg08-1379.png",
-        "paint_name": "SSG 08 | Calligrafaux",
+        "paint_name": "SSG 08 | Kalligrafisti",
         "legacy_model": false
     },
     {
@@ -15004,7 +15004,7 @@
         "weapon_name": "weapon_taser",
         "paint": "1382",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_taser-1382.png",
-        "paint_name": "Zeus x27 | Earth Mandala",
+        "paint_name": "Zeus x27 | Mainen mandala",
         "legacy_model": false
     },
     {
@@ -15045,22 +15045,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_tec9.png",
         "paint_name": "Tec-9  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 30,
-        "weapon_name": "weapon_tec9",
-        "paint": "1462",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_tec9-1462.png",
-        "paint_name": "Tec-9 | Sultan",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 30,
-        "weapon_name": "weapon_tec9",
-        "paint": "1447",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_tec9-1447.png",
-        "paint_name": "Tec-9 | Perimeter",
         "legacy_model": false
     },
     {
@@ -15432,19 +15416,27 @@
         "legacy_model": false
     },
     {
-        "weapon_defindex": 24,
-        "weapon_name": "weapon_ump45",
-        "paint": 0,
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_ump45.png",
-        "paint_name": "UMP-45  | Default",
+        "weapon_defindex": 30,
+        "weapon_name": "weapon_tec9",
+        "paint": "1447",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_tec9-1447.png",
+        "paint_name": "Tec-9 | Perimetri",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 30,
+        "weapon_name": "weapon_tec9",
+        "paint": "1462",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_tec9-1462.png",
+        "paint_name": "Tec-9 | Sulttaani",
         "legacy_model": false
     },
     {
         "weapon_defindex": 24,
         "weapon_name": "weapon_ump45",
-        "paint": "1426",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_ump45-1426.png",
-        "paint_name": "UMP-45 | Fragment",
+        "paint": 0,
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_ump45.png",
+        "paint_name": "UMP-45  | Default",
         "legacy_model": false
     },
     {
@@ -15700,7 +15692,7 @@
         "weapon_name": "weapon_ump45",
         "paint": "1387",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_ump45-1387.png",
-        "paint_name": "UMP-45 | Warm Blooded",
+        "paint_name": "UMP-45 | Kuumaverinen",
         "legacy_model": false
     },
     {
@@ -15794,6 +15786,14 @@
     {
         "weapon_defindex": 24,
         "weapon_name": "weapon_ump45",
+        "paint": "1426",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_ump45-1426.png",
+        "paint_name": "UMP-45 | Fragmentti",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 24,
+        "weapon_name": "weapon_ump45",
         "paint": "1203",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_ump45-1203.png",
         "paint_name": "UMP-45 | Yölinjalla",
@@ -15805,22 +15805,6 @@
         "paint": 0,
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_usp_silencer.png",
         "paint_name": "USP-S  | Default",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 61,
-        "weapon_name": "weapon_usp_silencer",
-        "paint": "1451",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_usp_silencer-1451.png",
-        "paint_name": "USP-S | Spiral Glitch",
-        "legacy_model": false
-    },
-    {
-        "weapon_defindex": 61,
-        "weapon_name": "weapon_usp_silencer",
-        "paint": "1431",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_usp_silencer-1431.png",
-        "paint_name": "USP-S | Silent Shot",
         "legacy_model": false
     },
     {
@@ -16100,7 +16084,7 @@
         "weapon_name": "weapon_usp_silencer",
         "paint": "1377",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_usp_silencer-1377.png",
-        "paint_name": "USP-S | Sleeping Potion",
+        "paint_name": "USP-S | Unilääke",
         "legacy_model": false
     },
     {
@@ -16168,19 +16152,27 @@
         "legacy_model": false
     },
     {
-        "weapon_defindex": 25,
-        "weapon_name": "weapon_xm1014",
-        "paint": 0,
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_xm1014.png",
-        "paint_name": "XM1014  | Default",
+        "weapon_defindex": 61,
+        "weapon_name": "weapon_usp_silencer",
+        "paint": "1431",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_usp_silencer-1431.png",
+        "paint_name": "USP-S | Hiljainen laukaus",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 61,
+        "weapon_name": "weapon_usp_silencer",
+        "paint": "1451",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_usp_silencer-1451.png",
+        "paint_name": "USP-S | Spiraalihäiriö",
         "legacy_model": false
     },
     {
         "weapon_defindex": 25,
         "weapon_name": "weapon_xm1014",
-        "paint": "1471",
-        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_xm1014-1471.png",
-        "paint_name": "XM1014 | Black Site",
+        "paint": 0,
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_xm1014.png",
+        "paint_name": "XM1014  | Default",
         "legacy_model": false
     },
     {
@@ -16509,6 +16501,14 @@
         "paint": "1078",
         "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_xm1014-1078.png",
         "paint_name": "XM1014 | Sininen rengas",
+        "legacy_model": false
+    },
+    {
+        "weapon_defindex": 25,
+        "weapon_name": "weapon_xm1014",
+        "paint": "1471",
+        "image": "https://raw.githubusercontent.com/Nereziel/cs2-WeaponPaints/main/website/img/skins/weapon_xm1014-1471.png",
+        "paint_name": "XM1014 | Musta mesta",
         "legacy_model": false
     },
     {

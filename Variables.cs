@@ -93,7 +93,16 @@ public partial class WeaponPaints
 	private static readonly Dictionary<int, DateTime> CommandsCooldown = new();
 	internal static Database? Database;
 
-	private static readonly MemoryFunctionVoid<nint, string, float> CAttributeListSetOrAddAttributeValueByName = new(GameData.GetSignature("CAttributeList_SetOrAddAttributeValueByName"));
+	/*
+	 * *** OUR OWN KEY, NOT THE SHARED NAME. *** CounterStrikeSharp merges every gamedata/*.json into one table and
+	 * the last file read wins a duplicate key, so any other plugin shipping "CAttributeList_SetOrAddAttributeValueByName"
+	 * with an older signature silently replaced ours. The pointer then resolved to null and every weapon threw at
+	 * its first attribute - paint on, stickers, charm, StatTrak and the legacy mesh gone - while our own signature
+	 * matched the live libserver.so exactly. See CheckAttributeFunction.
+	 */
+	internal const string SetOrAddAttributeKey = "WeaponPaints_CAttributeList_SetOrAddAttributeValueByName";
+
+	private static readonly MemoryFunctionVoid<nint, string, float> CAttributeListSetOrAddAttributeValueByName = new(GameData.GetSignature(SetOrAddAttributeKey));
 	
 	//we dont need anymore because we use AcceptInput
 	//private static readonly MemoryFunctionWithReturn<nint, string, int, int> SetBodygroupFunc = new(

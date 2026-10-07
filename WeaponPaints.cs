@@ -1,10 +1,11 @@
-using System.Runtime.InteropServices;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Entities.Constants;
+using CounterStrikeSharp.API.Modules.Memory;
+using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 using Microsoft.Extensions.Logging;
 using MySqlConnector;
 
@@ -20,17 +21,12 @@ public partial class WeaponPaints : BasePlugin, IPluginConfig<WeaponPaintsConfig
     public override string ModuleAuthor => "Nereziel & daffyy";
 	public override string ModuleDescription => "Skin, gloves, agents, knife and pet selector, standalone and web-based";
 	public override string ModuleName => "WeaponPaints";
-	public override string ModuleVersion => "3.4d";
+	public override string ModuleVersion => "3.5";
 
 	public override void Load(bool hotReload)
 	{
-		// Hardcoded hotfix needs to be changed later (Not needed 17.09.2025)
-		//if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-		//	Patch.PerformPatch("0F 85 ? ? ? ? 31 C0 B9 ? ? ? ? BA ? ? ? ? 66 0F EF C0 31 F6 31 FF 48 C7 45 ? ? ? ? ? 48 C7 45 ? ? ? ? ? 48 C7 45 ? ? ? ? ? 48 C7 45 ? ? ? ? ? 0F 29 45 ? 48 C7 45 ? ? ? ? ? C7 45 ? ? ? ? ? 66 89 45 ? E8 ? ? ? ? 41 89 C5 85 C0 0F 8E", "90 90 90 90 90 90");
-		//else
-		//	Patch.PerformPatch("74 ? 48 8D 0D ? ? ? ? FF 15 ? ? ? ? EB ? BA", "EB");
-		
 		Instance = this;
+		CheckAttributeFunction();
 
 		if (hotReload)
 		{
@@ -71,6 +67,32 @@ public partial class WeaponPaints : BasePlugin, IPluginConfig<WeaponPaintsConfig
 		RegisterListeners();
 	}
 
+	/// <summary>
+	/// Says ONCE, at load, that the attribute function did not resolve - instead of a NativeException on every
+	/// weapon that spawns. Everything after the paint (stickers, charm, StatTrak, the legacy mesh) needs it.
+	/// </summary>
+	private void CheckAttributeFunction()
+	{
+		if (CAttributeListSetOrAddAttributeValueByName.Handle != IntPtr.Zero) return;
+
+		Logger.LogError(
+			"Signature \"{Key}\" did not match libserver - stickers, charms, StatTrak and legacy models will not apply. " +
+			"Update addons/counterstrikesharp/gamedata/weaponpaints.json.", SetOrAddAttributeKey);
+	}
+
+	/// <summary>
+	/// Upstream's Unload, renamed: this fork already overrides Unload in Pets.cs, which calls this.
+	/// Native hook outlives the plugin's AssemblyLoadContext; without this, css_plugins reload
+	/// leaves the old OnGiveNamedItemPost delegate registered and the next GiveNamedItem crashes the server.
+	/// </summary>
+	private void UnhookGiveNamedItem()
+	{
+		if (!_giveNamedItemHooked) return;
+
+		VirtualFunctions.GiveNamedItemFunc.Unhook(OnGiveNamedItemPost, HookMode.Post);
+		_giveNamedItemHooked = false;
+	}
+
 	public void OnConfigParsed(WeaponPaintsConfig config)
 	{
 		Config = config;
@@ -103,6 +125,9 @@ public partial class WeaponPaints : BasePlugin, IPluginConfig<WeaponPaintsConfig
 		};
 
 		Database = new Database(builder.ConnectionString);
+		// Created here instead of OnMapStart: on a cold boot the first map can start before the
+		// listener is registered, leaving WeaponSync null and every command silently ignored.
+		WeaponSync = new WeaponSynchronization(Database, config);
 
 		_ = Utility.CheckDatabaseTables();
 		_localizer = Localizer;

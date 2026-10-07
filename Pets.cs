@@ -671,6 +671,7 @@ public partial class WeaponPaints
 			Logger.LogWarning("Could not remove the pets on unload: {Reason}", ex.Message);
 		}
 
+		UnhookGiveNamedItem();
 		base.Unload(hotReload);
 	}
 

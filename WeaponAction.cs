@@ -352,12 +352,27 @@ namespace WeaponPaints
 
 			CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
 				"keychain slot 0 id", ViewAsFloat(keyChain.Id));
-			CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
-				"keychain slot 0 offset x", keyChain.OffsetX);
-			CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
-				"keychain slot 0 offset y", keyChain.OffsetY);
-			CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
-				"keychain slot 0 offset z", keyChain.OffsetZ);
+
+			/*
+			 * *** ALL THREE ZERO IS "NEVER PLACED", AND THAT MEANS NO OFFSET ATTRIBUTES AT ALL. ***
+			 *
+			 * The offset is a MODEL-SPACE point, not a displacement from the charm's attachment. A charm
+			 * nobody has dragged is `id;0;0;0;seed` (the column default), and an inspect link carries it by
+			 * leaving the three fields out - the game then hangs it on the weapon's keychain attachment,
+			 * which is where the SkinHub viewer draws it too. Writing the zeros as attributes is a
+			 * different instruction: hang it off the model origin, which on the AK is up by the grip
+			 * rather than behind the handguard. Every charm attached and never moved landed there.
+			 * Attributes were cleared by the caller, so skipping these leaves them absent.
+			 */
+			if (keyChain.OffsetX != 0f || keyChain.OffsetY != 0f || keyChain.OffsetZ != 0f)
+			{
+				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
+					"keychain slot 0 offset x", keyChain.OffsetX);
+				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
+					"keychain slot 0 offset y", keyChain.OffsetY);
+				CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
+					"keychain slot 0 offset z", keyChain.OffsetZ);
+			}
 			CAttributeListSetOrAddAttributeValueByName.Invoke(weapon.AttributeManager.Item.NetworkedDynamicAttributes.Handle,
 				"keychain slot 0 seed", ViewAsFloat(keyChain.Seed));
 		}

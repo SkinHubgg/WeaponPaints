@@ -218,7 +218,12 @@ namespace WeaponPaints
 					GivePlayerWeaponSkin(player, weapon);
 				}
 			}
-			catch { }
+			// Logged, not swallowed: a throw half way through GivePlayerWeaponSkin leaves the paint on and drops
+			// everything after it (stickers, charm, the legacy mesh), and an empty catch made that invisible.
+			catch (Exception ex)
+			{
+				Utility.Log($"OnGiveNamedItemPost: {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
+			}
 
 			return HookResult.Continue;
 		}
@@ -261,8 +266,10 @@ namespace WeaponPaints
 						
 						GivePlayerWeaponSkin(player, weapon);
 					}
-					catch (Exception)
+					// Logged for the same reason as OnGiveNamedItemPost's catch.
+					catch (Exception ex)
 					{
+						Utility.Log($"OnEntityCreated({designerName}): {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
 					}
 				});
 			}
